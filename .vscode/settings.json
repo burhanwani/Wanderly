@@ -1,0 +1,18 @@
+{
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "[typescript]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
+  "cSpell.words": [
+    "creds",
+    "firestore",
+    "Immer",
+    "maxprice",
+    "minprice",
+    "Ratelimit",
+    "upstash"
+  ]
+}

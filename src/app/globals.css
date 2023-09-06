@@ -34,6 +34,9 @@
     --ring: 215 20.2% 65.1%;
 
     --radius: 0.5rem;
+
+    --header-height: 3.5rem;
+    --body-header-padding: 3.5rem;
   }
 
   .dark {
@@ -74,5 +77,18 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+.home-page-trip-type:before {
+  content: " vacation ";
+  animation-name: trip-type-animation;
+  animation-duration: 4s;
+  animation-iteration-count: infinite;
+}
+
+@keyframes trip-type-animation {
+  50% {
+    content: " business ";
   }
 }

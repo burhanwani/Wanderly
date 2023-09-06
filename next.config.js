@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const nextConfig = {
+  images: {
+    domains: ["maps.googleapis.com"],
+  },
+  experimental: {},
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
