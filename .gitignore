@@ -33,3 +33,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+concierge-frontend-firebase.json
+concierge-firebase.json
+.env.development

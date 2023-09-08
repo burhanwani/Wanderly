@@ -1,8 +1,13 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Card, CardHeader } from "../components/ui/card";
-import { cn } from "../lib/utils";
+import { cn } from "../lib/utils/ui.utils";
+import { ApplicationStateProvider } from "../providers/state.provider";
+
+import { ThemeProvider } from "../providers/theme.provider";
+import { Header } from "@/components/layout/header";
+import NextAuthSessionProvider from "../providers/session.provider";
+import { Toaster } from "../components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,14 +23,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={cn(inter.className, "bg-gray-100")}>
-        <header className="bg-white shadow-sm lg:static lg:overflow-y-visible">
-          <div className="py-4 px-4 sm:px-6 lg:px-8 flex">
-            <div>Concierge</div>
-            <div></div>
-          </div>
-        </header>
-        {children}
+      <body className={cn(inter.className, "h-full min-h-screen")}>
+        <NextAuthSessionProvider>
+          <ApplicationStateProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <Header />
+              <Toaster />
+              {children}
+            </ThemeProvider>
+          </ApplicationStateProvider>
+        </NextAuthSessionProvider>
       </body>
     </html>
   );
