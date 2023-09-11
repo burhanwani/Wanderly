@@ -20,7 +20,7 @@ const TermSchema = object().shape({
 
 const PredictionSchema = object().shape({
   description: string().default(""),
-  distance_meters: number().nullable().default(null),
+  // distance_meters: number().nullable().default(null),
   id: string().default(""),
   matched_substrings: array()
     .of(

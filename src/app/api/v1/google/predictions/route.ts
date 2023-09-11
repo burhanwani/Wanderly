@@ -1,13 +1,13 @@
 import axios, { AxiosResponse } from "axios";
-import { NextResponse } from "next/server";
 import { GoogleEndPoints } from "../../../../../lib/constants/google.constants";
+import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
 import { GooglePlacesAutocompleteResponseSchemaType } from "../../../../../lib/schema/prediction.schema";
 import { generateGoogleUrl } from "../../../../../lib/utils/google-places.utils";
 
 export async function POST(request: Request) {
   const { search } = await request.json();
   const predictions = await getSuggestionsFromServer(search);
-  return NextResponse.json(predictions, { status: 200 });
+  return RESPONSE_CONSTANTS[200](predictions);
 }
 
 const getSuggestionsFromServer = async (search: string) => {
@@ -15,6 +15,7 @@ const getSuggestionsFromServer = async (search: string) => {
     const url = generateGoogleUrl(GoogleEndPoints.AUTO_COMPLETE, {
       input: search,
       types: "(regions)",
+      fields: "place_id,description",
     });
     const response = await axios.get<
       string,

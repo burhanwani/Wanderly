@@ -2,48 +2,28 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { ChatCompletionRequestMessage } from "openai-edge";
 import { InferType, ValidationError } from "yup";
+import { getPlaceDetail } from "../../../../../lib/backend/services/places.backend.services";
+import {
+  createTrip,
+  getTripsLength,
+} from "../../../../../lib/backend/services/trips.backend.services";
+import {
+  BETA_LIMIT_EMAIL_WHITE_LIST,
+  isBetaLimitReached,
+} from "../../../../../lib/config/app/app.config";
 import { nextAuthOptions } from "../../../../../lib/config/auth/next-auth.config";
-import firebaseAdmin from "../../../../../lib/config/firebase/firebase-admin.config";
 import { openAi } from "../../../../../lib/config/open-ai/open-ai.config";
-import {
-  Collections,
-  TripWith,
-} from "../../../../../lib/constants/firebase.constants";
+import { TripWith } from "../../../../../lib/constants/firebase.constants";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
-import {
-  ChatGptTripBuilderModalSchemaType,
-  chatGptTripBuilderModalSchema,
-} from "../../../../../lib/schema/chat-gpt-trip-builder.schema";
 import { cityBuilderModalSchema } from "../../../../../lib/schema/city-builder-form.schema";
-import {
-  ActivityModalSchemaType,
-  DayModalSchemaType,
-  dayModalSchema,
-} from "../../../../../lib/schema/day.schema";
-import {
-  DistanceMatrixResponseSchemaType,
-  distanceSchema,
-  durationSchema,
-} from "../../../../../lib/schema/distance-matrix-api.schema";
-import {
-  ChatGptTripItineraryResponseType,
-  chatGptTripItineraryResponseSchema,
-} from "../../../../../lib/schema/open-ai.schema";
-import { GooglePlaceDetailResponseType } from "../../../../../lib/schema/place-details.schema";
-import {
-  TripModalSchemaType,
-  tripModalSchema,
-} from "../../../../../lib/schema/trip.schema";
-import {
-  getDistanceMatrixBetweenPlacesParallel,
-  getPlaceDetailsWithImageParallel,
-} from "../../../../../lib/utils/google-places.utils";
-import { getPlaceDetail } from "../../google/place/route";
+import { chatGptTripItineraryResponseSchema } from "../../../../../lib/schema/open-ai.schema";
 
 const getUserInput = (data: cityBuilderFormType) => {
-  const days = `I'm traveling for ${data?.days} days`;
+  const days = `Please generate itinerary for ${data?.days} days`;
   const withStatement =
-    data?.tripWith == TripWith.Solo ? "alone." : "with " + data?.tripWith + ".";
+    data?.tripWith == TripWith.Solo
+      ? " alone."
+      : " with " + data?.tripWith + ".";
   const activities = `${
     data?.activityTypes?.length > 0
       ? "\nI would love to spend my time on activities like " +
@@ -91,6 +71,13 @@ export async function POST(req: NextRequest) {
   try {
     const data = await cityBuilderModalSchema.validate(json);
     const placeDetails = await getPlaceDetail(data?.placeId);
+    const length = await getTripsLength(userId);
+    if (
+      isBetaLimitReached(length) &&
+      !BETA_LIMIT_EMAIL_WHITE_LIST.includes(session?.user?.email)
+    ) {
+      return RESPONSE_CONSTANTS[401]("Only 3 trips are allowed in beta");
+    }
     if (placeDetails?.status != "OK")
       return NextResponse.json(
         { messages: "Invalid Place ID" },
@@ -105,7 +92,6 @@ export async function POST(req: NextRequest) {
       user: userId,
       stream: false,
     });
-    console.log("messages", messages);
     const daysResponse = await res.json();
     console.log("daysResponse", daysResponse);
     const days = daysResponse?.choices[0]?.message?.content;
@@ -127,114 +113,4 @@ export async function POST(req: NextRequest) {
       return RESPONSE_CONSTANTS[400](err.message);
   }
   return RESPONSE_CONSTANTS[500];
-}
-
-async function createTrip(
-  days: ChatGptTripItineraryResponseType,
-  userId: string,
-  placeDetails: GooglePlaceDetailResponseType,
-  messages: ChatCompletionRequestMessage[]
-) {
-  const allDays = Object.values(days);
-  const places = await Promise.all(
-    allDays.map((activities) =>
-      getPlaceDetailsWithImageParallel(
-        activities.map((activity) => activity.google_place_name)
-      )
-    )
-  );
-  const distances = await Promise.all(
-    places.map((days) => getDistanceMatrixBetweenPlacesParallel(days))
-  );
-
-  const { daysDetails, tripDetails } = await createFirebaseTrip(
-    days,
-    userId,
-    placeDetails,
-    places,
-    distances,
-    messages
-  );
-  return { tripDetails, daysDetails, places: places.flat() };
-}
-
-async function createFirebaseTrip(
-  days: ChatGptTripItineraryResponseType,
-  userId: string,
-  placeDetails: GooglePlaceDetailResponseType,
-  places: GooglePlaceDetailResponseType[][],
-  distances: (DistanceMatrixResponseSchemaType | null)[][],
-  messages: ChatCompletionRequestMessage[]
-) {
-  const daysValues = Object.values(days);
-  const db = firebaseAdmin.firestore();
-  const tripRef = db.collection(Collections.TRIPS).doc();
-  const daysRef = await Promise.all(
-    daysValues.map(() => db.collection(Collections.DAYS).doc())
-  );
-  const daysDetails = daysValues.map((day, dayIndex) => {
-    return dayModalSchema.validateSync({
-      activities: day.map(
-        (activity, activityIndex) =>
-          ({
-            allocatedTime: activity.allocated_time,
-            description: activity.description,
-            name: activity.google_place_name,
-            time: activity.time,
-            placeId: places[dayIndex][activityIndex]?.result?.place_id,
-            travel: {
-              distance: distanceSchema.validateSync(
-                distances?.[dayIndex]?.[activityIndex]?.rows?.[0]?.elements?.[0]
-                  ?.distance
-              ),
-              duration: durationSchema.validateSync(
-                distances?.[dayIndex]?.[activityIndex]?.rows?.[0]?.elements?.[0]
-                  ?.duration
-              ),
-            },
-            // imageUrl:
-            //   places?.[dayIndex]?.[activityIndex]?.result?.photos?.[0]
-            //     ?.photo_reference,
-            location: {
-              lat: places?.[dayIndex]?.[activityIndex]?.result?.geometry
-                ?.location?.lat,
-              lng: places?.[dayIndex]?.[activityIndex]?.result?.geometry
-                ?.location?.lng,
-            },
-          }) as ActivityModalSchemaType
-      ),
-      tripId: tripRef.id,
-      userId,
-      dayId: daysRef[dayIndex].id,
-    } as DayModalSchemaType);
-  });
-  const tripDetails = tripModalSchema.validateSync({
-    days: daysRef.map((day) => day.id),
-    placeId: placeDetails?.result?.place_id,
-    userId,
-    tripId: tripRef?.id,
-    placeName: placeDetails?.result?.name,
-    location: {
-      lat: placeDetails?.result?.geometry?.location?.lat,
-      lng: placeDetails?.result?.geometry?.location?.lng,
-    },
-    // photoReference: placeDetails?.result?.photos?.[0]?.photo_reference,
-  } as TripModalSchemaType);
-  const messageDetails = chatGptTripBuilderModalSchema.validateSync({
-    messages,
-    response: days,
-    tripId: tripRef?.id,
-    userId,
-  } as ChatGptTripBuilderModalSchemaType);
-  const promises = new Array<Promise<unknown>>();
-  promises.push(tripRef.create(tripDetails));
-  promises.push(
-    db.collection(Collections.BUILDERS).doc().create(messageDetails)
-  );
-
-  daysDetails.forEach((day, index) =>
-    promises.push(daysRef[index].create(day))
-  );
-  await Promise.all(promises);
-  return { tripDetails, daysDetails };
 }
