@@ -31,7 +31,7 @@ const ONE_MILLISECOND_IN_SECOND = 1000;
 
 function DayViewer({ day }: IDayViewer) {
   const { toast } = useToast();
-  const [updateActivity, updateActivityResult] = useUpdateActivityMutation();
+  const [updateActivity] = useUpdateActivityMutation();
   const dayConfig = useAppSelector((state) => {
     return state.days.entities[day] || null;
   });
@@ -48,10 +48,17 @@ function DayViewer({ day }: IDayViewer) {
         const newActivities = [...(dayConfig?.activities || [])];
         const [removed] = newActivities?.splice(sourceIndex, 1);
         newActivities?.splice(destinationIndex, 0, removed);
-        updateActivity({ ...dayConfig, activities: newActivities });
+        updateActivity({ ...dayConfig, activities: newActivities })
+          .unwrap()
+          .catch(() => {
+            toast({
+              title: "Something went wrong while saving activity order",
+              variant: "destructive",
+            });
+          });
       }
     },
-    [dayConfig, updateActivity]
+    [dayConfig, toast, updateActivity]
   );
   const momentStartTime = useMemo(() => {
     const now = moment();
@@ -177,37 +184,32 @@ function DayViewer({ day }: IDayViewer) {
             onChange={startTimeOnChange}
             value={momentStartTime}
             allowEmpty={false}
-            disabled={updateActivityResult?.isLoading}
             // className="text-primary bg-background"
           />
         </div>
       </div>
       <div className="mt-4 p-4 bg-muted h-full rounded-lg min-h-[65vh]">
-        {updateActivityResult?.isLoading ? (
-          <ActivityLoader />
-        ) : (
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId={`${day}`}>
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="flex gap-y-4 flex-col"
-                >
-                  {dayConfig?.activities?.map((plan, index) => (
-                    <DayItineraryViewer
-                      day={dayConfig}
-                      plan={plan}
-                      index={index}
-                      key={plan.placeId}
-                      timingConfig={timingConfig}
-                    />
-                  ))}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-        )}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId={`${day}`}>
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="flex gap-y-4 flex-col"
+              >
+                {dayConfig?.activities?.map((plan, index) => (
+                  <DayItineraryViewer
+                    day={dayConfig}
+                    plan={plan}
+                    index={index}
+                    key={plan.placeId}
+                    timingConfig={timingConfig}
+                  />
+                ))}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       </div>
     </TabsContent>
   );
