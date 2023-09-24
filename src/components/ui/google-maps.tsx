@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { useTheme } from "next-themes";
 import { cn } from "../../lib/utils/ui.utils";
@@ -299,12 +299,20 @@ function ConciergeGoogleMap({
     IConciergeGoogleMap["initialPosition"]
   >({ lat: 0, lng: 0 });
   const day = useAppSelector((state) => state.days.entities[currentDay]);
+  const placeDetails = useAppSelector((state) => state.google.places.entities);
   const { theme = "light" } = useTheme();
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY!,
   });
 
+  const activityWithGoogleMeta = useMemo(() => {
+    return day?.activities?.map((activity) => {
+      const location =
+        placeDetails[activity?.placeId!]?.result.geometry.location;
+      return { ...activity, location };
+    });
+  }, [day?.activities, placeDetails]);
   useEffect(() => {
     setPosition(() => initialPosition);
   }, [initialPosition]);
@@ -315,18 +323,18 @@ function ConciergeGoogleMap({
     function callback(map: google.maps.Map) {
       // This is just an example of getting and using the map instance!!! don't just blindly copy!
       const bounds = new google.maps.LatLngBounds();
-      day?.activities?.forEach((activity) => {
+      activityWithGoogleMeta?.forEach((activity) => {
         bounds.extend(
           new google.maps.LatLng(
-            activity?.location?.lat,
-            activity?.location?.lng
+            activity.location?.lat!,
+            activity.location?.lng!
           )
         );
       });
       map.fitBounds(bounds);
       setMap(map);
     },
-    [day?.activities]
+    [activityWithGoogleMeta]
   );
 
   const onUnmount = React.useCallback(function callback(map: google.maps.Map) {
@@ -342,15 +350,15 @@ function ConciergeGoogleMap({
       options={theme == "dark" ? googleMapsDark : googleMapsLight}
       onUnmount={onUnmount}
     >
-      {day?.activities?.map((activity) => (
+      {activityWithGoogleMeta?.map((activity) => (
         <Marker
           position={{
-            lat: activity.location.lat,
-            lng: activity.location.lng,
+            lat: activity?.location?.lat!,
+            lng: activity?.location?.lng!,
           }}
           key={activity.placeId}
           label={{
-            text: activity.name,
+            text: (activity?.name! as string) || "",
             className: `text-foreground bg-background/70 p-2 ${inter.className} font-semibold border rounded-md mb-8`,
             color: theme == "dark" ? "hsl(210 40% 98%)" : undefined,
           }}

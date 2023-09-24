@@ -7,7 +7,7 @@ export const generateGoogleUrl = (
   queryParameter: { [key: string]: string | number } = {}
 ) => {
   const queryParameterString = Object.entries(queryParameter)
-    .map(([key, value]) => `${key}=${value}`)
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
     .join("&");
   return baseUrl + "?" + queryParameterString + `&key=${GOOGLE_MAP_API_KEY}`;
 };

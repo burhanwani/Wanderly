@@ -7,6 +7,8 @@ const RESPONSE_CONSTANTS = {
     NextResponse.json({ message }, { status: 400 }),
   404: (message: unknown = "Not Found") =>
     NextResponse.json({ message }, { status: 404 }),
+  405: (message: unknown = "Not Allowed") =>
+    NextResponse.json({ message }, { status: 405 }),
   429: NextResponse.json(
     {
       message: "Too Many Request. Please try again later.",

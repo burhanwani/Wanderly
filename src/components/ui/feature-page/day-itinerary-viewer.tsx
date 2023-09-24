@@ -1,12 +1,5 @@
-import {
-  Trash,
-  Calendar,
-  Clock,
-  Footprints,
-  Map,
-  PlusIcon,
-} from "lucide-react";
-import { useCallback, ChangeEvent, useMemo } from "react";
+import { Trash, Calendar, Clock, Footprints, Map } from "lucide-react";
+import { useCallback, ChangeEvent, useMemo, useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { Button } from "../button";
 import { Card, CardHeader, CardTitle, CardContent } from "../card";
@@ -17,10 +10,13 @@ import { DayModalSchemaType } from "../../../lib/schema/day.schema";
 import { useAppSelector } from "../../../redux/hooks";
 import { useUpdateActivityMutation } from "../../../redux/services/days.services";
 import { number } from "yup";
+import Image from "next/image";
+import { buildGooglePhotoApi } from "../../../lib/constants/google.constants";
+import { DayModalSchemaTypeV2 } from "../../../lib/schema/day.v2.schema";
 
 interface IDayItineraryViewer {
-  day: DayModalSchemaType;
-  plan: DayModalSchemaType["activities"][0];
+  day: DayModalSchemaTypeV2;
+  plan: DayModalSchemaTypeV2["activities"][0];
   index: number;
   timingConfig: {
     [key: string]: {
@@ -33,6 +29,7 @@ interface IDayItineraryViewer {
       travelTimeFormatted: string;
     };
   };
+  dragAndDropLoading: boolean;
 }
 
 function hoursToSeconds(hours: unknown) {
@@ -48,11 +45,18 @@ export function DayItineraryViewer({
   plan,
   index,
   timingConfig,
+  dragAndDropLoading,
 }: IDayItineraryViewer) {
   const place = useAppSelector(
-    (state) => state.google.places.entities[plan?.placeId]
+    (state) => state.google.places.entities[plan?.placeId!]
   );
+  const nextPlace = useAppSelector((state) => {
+    const nextPlan = day?.activities?.[index + 1];
+    return state.google.places.entities[nextPlan?.placeId!] || null;
+  });
   const [updateActivity] = useUpdateActivityMutation();
+  const [showDistanceLoading, setShowDistanceLoading] =
+    useState<boolean>(false);
   const inputChangeHandler = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       const { value = 1 } = e?.target || 1;
@@ -63,36 +67,45 @@ export function DayItineraryViewer({
           activities: day.activities.map((_plan) => {
             const newPlan = { ..._plan };
             if (_plan.placeId == plan.placeId) {
-              newPlan.allocatedTime = seconds;
+              newPlan.duration_seconds = seconds;
             }
             return newPlan;
           }),
         };
-        updateActivity(dayToUpdate);
+        updateActivity(dayToUpdate)
+          .unwrap()
+          .finally(() => setShowDistanceLoading(() => false));
       }
     },
     [day, plan.placeId, updateActivity]
   );
-  // const onDelete = useCallback((_plan) => {
-  //   const dayToUpdate = {
-  //     ...day,
-  //     activities: day.activities.map((_plan) => {
-  //       const newPlan = { ..._plan };
-  //       if (_plan.placeId == plan.placeId) {
-  //         newPlan.allocatedTime = seconds;
-  //       }
-  //       return newPlan;
-  //     }),
-  //   };
-  //   updateActivity(dayToUpdate);
-  // }, []);
-  const imageUrl = useMemo(
-    () => place?.result?.photos?.[0]?.photo_reference,
-    [place?.result?.photos]
-  );
+  const onDelete = useCallback(() => {
+    const dayToUpdate = {
+      ...day,
+      activities: day.activities
+        .filter((_plan, _index) => {
+          return _plan.placeId != plan.placeId;
+        })
+        .map((_plan) => ({ ..._plan })),
+    };
+    updateActivity(dayToUpdate)
+      .unwrap()
+      .finally(() => setShowDistanceLoading(() => false));
+  }, [day, plan.placeId, updateActivity]);
+  const imageUrl = useMemo(() => {
+    if (place?.result?.photos?.length || 0 > 0) {
+      let photoReference = place?.result?.photos?.[0]?.photo_reference;
+      const photo = place?.result?.photos?.find(
+        (_photo) => _photo.width > _photo?.height
+      );
+      if (photo != undefined) photoReference = photo?.photo_reference;
+      return buildGooglePhotoApi(448, 240, photoReference);
+    }
+    return null;
+  }, [place?.result?.photos]);
   return (
     <>
-      <Draggable key={plan.placeId} draggableId={plan.placeId} index={index}>
+      <Draggable key={plan.placeId} draggableId={plan?.placeId!} index={index}>
         {(provided) => {
           return (
             <div
@@ -100,15 +113,15 @@ export function DayItineraryViewer({
               {...provided.draggableProps}
               {...provided.dragHandleProps}
             >
-              <Card className="group hover:border-primary hover:border-2 hover:border-dashed">
-                <CardHeader>
+              <Card className="group flex justify-between hover:border-primary hover:border-2 hover:border-dashed">
+                <CardHeader className="w-full">
                   <CardTitle className="flex items-center justify-between">
-                    <div className="">{plan.name}</div>
+                    <div className="">{(plan?.name as string) || ""}</div>
                     <Button
                       size={"icon"}
                       variant={"destructive"}
                       className="group-hover:opacity-100 opacity-0 ease-in transition-opacity duration-100"
-                      onClick={() => {}}
+                      onClick={onDelete}
                     >
                       <Trash className="h-4 w-4" />
                     </Button>
@@ -135,41 +148,49 @@ export function DayItineraryViewer({
                       hrs
                     </div>
                     <TypographyP className="!mt-4">
-                      {plan?.description}
+                      {plan?.description as string}
                     </TypographyP>
                   </CardContent>
                 </CardHeader>
-                {/* {imageUrl && (
-                  <div>
+                {imageUrl && (
+                  <div className="hidden xl:block">
                     <Image
-                      src={`https://maps.googleapis.com/maps/api/place/photoimageUrl?maxWidth=400&photoreference=${imageUrl}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY}`}
-                      alt="Image"
+                      className="rounded-r-xl max-w-md bg-cover max-h-60"
+                      src={imageUrl}
+                      alt={place?.result?.name || "Place Image"}
                       width={400}
                       height={100}
                     />
                   </div>
-                )} */}
+                )}
               </Card>
             </div>
           );
         }}
       </Draggable>
-      <div className="flex w-full items-center justify-center gap-x-2 h-5">
-        <Footprints className="h-5 w-5" />~{" "}
-        <TypographyP className="mr-2 !mt-0">
-          {timingConfig?.[index]?.travelTimeFormatted}
-        </TypographyP>
-        <Separator orientation="vertical" className="bg-primary" />
-        <Button variant={"link"}>
-          <Map className="h-5 w-5 mr-2" />
-          Direction
-        </Button>
-      </div>
-      {/* <div className="flex flex-row items-center justify-center w-full"> */}
-      {/* <Button variant={"ghost"} className="flex gap-x-2">
-        <PlusIcon className="h-5 w-5" /> Add Activity
-      </Button> */}
-      {/* </div> */}
+      {day?.activities?.length - 1 != index && (
+        <div className="flex w-full items-center justify-center gap-x-2 h-5">
+          <Footprints className="h-5 w-5" />~{" "}
+          <TypographyP className="mr-2 !mt-0">
+            {showDistanceLoading || dragAndDropLoading
+              ? "Calculating..."
+              : timingConfig?.[index]?.travelTimeFormatted}
+          </TypographyP>
+          <Separator orientation="vertical" className="bg-primary" />
+          <Button
+            variant={"link"}
+            onClick={() =>
+              window.open(
+                `https://www.google.com/maps/dir/?api=1&origin=${place?.result?.formatted_address}&destination=${nextPlace?.result?.formatted_address}`,
+                "_blank"
+              )
+            }
+          >
+            <Map className="h-5 w-5 mr-2" />
+            Direction
+          </Button>
+        </div>
+      )}
     </>
   );
 }

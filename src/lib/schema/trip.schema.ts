@@ -1,4 +1,5 @@
 import { InferType, array, object, string } from "yup";
+import { WanderlyVersion } from "../config/app/app.config";
 import { locationSchema } from "./day.schema";
 
 export const tripModalSchema = object()
@@ -14,6 +15,7 @@ export const tripModalSchema = object()
     placeName: string().required(),
     location: locationSchema,
     // photoReference: string().optional(),
+    version: string().oneOf(Object.values(WanderlyVersion)).required(),
   })
   .required();
 

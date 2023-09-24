@@ -12,8 +12,8 @@ import { Toaster } from "../components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Concierge - Travel Companion",
-  description: "Concierge - Travel Companion",
+  title: "Wanderly - Travel Companion",
+  description: "Wanderly - Travel Companion",
 };
 
 export default function RootLayout({
@@ -23,7 +23,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={cn(inter.className, "h-full min-h-screen")}>
+      <body
+        className={cn(
+          inter.className,
+          "h-screen overflow-y-auto overflow-x-hidden"
+        )}
+      >
         <NextAuthSessionProvider>
           <ApplicationStateProvider>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

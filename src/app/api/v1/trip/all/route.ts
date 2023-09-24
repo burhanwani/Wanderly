@@ -13,6 +13,7 @@ export async function GET() {
     const trips = await getTrips(userId);
     return RESPONSE_CONSTANTS[200](trips);
   } catch (err) {
+    console.log("err", err);
     return RESPONSE_CONSTANTS[500](
       "Something went wrong while fetching trips."
     );

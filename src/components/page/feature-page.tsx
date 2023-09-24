@@ -42,11 +42,6 @@ export default function MainFeaturePage() {
   const tripEntity = useAppSelector((state) =>
     tripId ? state.trips.entities[tripId] : null
   );
-  const tripPlace = useAppSelector((state) =>
-    tripEntity?.placeId
-      ? state.google.places.entities[tripEntity?.placeId]
-      : null
-  );
 
   const position = useMemo(() => {
     return {
@@ -65,13 +60,15 @@ export default function MainFeaturePage() {
   );
 
   useEffect(() => {
-    if (tripEntity?.days?.[0]) setCurrentDay(() => tripEntity?.days?.[0] || "");
-  }, [tripEntity?.days]);
+    if (tripEntity?.days?.[0] && isSuccess) {
+      setCurrentDay(() => tripEntity?.days?.[0] || "");
+    }
+  }, [isSuccess, tripEntity?.days]);
 
   return (
     <AuthChecker>
       <Main className="items-start gap-y-2">
-        {isSuccess && (
+        {isSuccess && currentDay && (
           <>
             <Card className="h-full w-full flex flex-col md:flex-row items-stretch justify-between mt-4">
               <div className="flex h-full w-full md:w-8/12 items-start flex-col justify-start p-4 max-h-[90vh] overflow-y-auto">
@@ -84,7 +81,12 @@ export default function MainFeaturePage() {
                   {/* <TypographyMuted>{tripPlace?.result?.name}</TypographyMuted> */}
                 </div>
                 <div className="flex gap-x-4  w-full mt-4">
-                  <Tabs defaultValue={tripEntity?.days?.[0]} className="w-full">
+                  <Tabs
+                    defaultValue={currentDay}
+                    defaultChecked={true}
+                    className="w-full"
+                    activationMode="manual"
+                  >
                     <TabsList className="w-full">
                       <div className="flex overflow-x-scroll md:overflow-x-auto w-full scroll-p-5 h-full my-4">
                         {/* <TabsTrigger value="tripOverview">
@@ -130,8 +132,8 @@ export default function MainFeaturePage() {
                         {tripDetails?.placeDetails?.result?.name}!
                       </div>
                     </TabsContent> */}
-                    {tripEntity?.days?.map((day) => (
-                      <DayViewer day={day} key={day} />
+                    {tripEntity?.days?.map((day, index) => (
+                      <DayViewer day={day} key={day} index={index} />
                     ))}
                   </Tabs>
                 </div>

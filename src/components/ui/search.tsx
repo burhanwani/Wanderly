@@ -10,14 +10,12 @@ import { cn } from "../../lib/utils/ui.utils";
 import { useSession, signIn } from "next-auth/react";
 import { AUTH_SIGN_OPTION } from "../../lib/constants/auth.constants";
 import { useToast } from "./use-toast";
-import { Skeleton } from "./skeleton";
-import { ToastAction } from "@radix-ui/react-toast";
 import { useLazyGetPredictionsQuery } from "../../redux/services/google.services";
-
 import { selectTripsEntities } from "../../redux/features/days.slice";
 import { useAppSelector } from "../../redux/hooks";
 import { TypographyH4 } from "./typography";
 import { GooglePlacesAutocompleteResponseSchemaType } from "../../lib/schema/prediction.schema";
+import { isAdminUser } from "../../lib/config/app/app.config";
 
 const AutocompleteInput = () => {
   const router = useRouter();
@@ -34,6 +32,7 @@ const AutocompleteInput = () => {
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [fetchPredictions] = useLazyGetPredictionsQuery();
+  // const [fetchGenerateActivities] = useLazyGenerateActivitiesQuery();
   // Function to handle input value change
   const handleChange = useCallback(
     (event: React.FormEvent<HTMLElement>, { newValue }: ChangeEvent) => {
@@ -74,6 +73,7 @@ const AutocompleteInput = () => {
         suggestion: GooglePlacesAutocompleteResponseSchemaType["predictions"][0];
       }
     ) => {
+      // fetchGenerateActivities(suggestion.place_id);
       if (session.status == "authenticated") {
         router.push(ROUTES_CONSTANTS.cityBuilder(suggestion.place_id));
       } else {
@@ -138,7 +138,11 @@ const AutocompleteInput = () => {
     []
   );
 
-  if (session.status == "authenticated" && trips.length > 2) {
+  if (
+    session.status == "authenticated" &&
+    trips.length > 2 &&
+    !session?.data?.user?.isAdmin
+  ) {
     return <TypographyH4>Only 3 trips are allowed in beta</TypographyH4>;
   }
   return (

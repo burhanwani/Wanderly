@@ -6,3 +6,22 @@ export enum GoogleEndPoints {
   DISTANCE_MATRIX = "https://maps.googleapis.com/maps/api/distancematrix/json",
   IMAGE = "https://maps.googleapis.com/maps/api/place/photo",
 }
+
+export const buildGooglePhotoApi = (
+  maxWidth = 400,
+  maxHeight = 100,
+  photoReference = "",
+  apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY
+) => {
+  return (
+    GoogleEndPoints.IMAGE +
+    "?maxwidth=" +
+    maxWidth +
+    "&maxheigth=" +
+    maxHeight +
+    "&photo_reference=" +
+    photoReference +
+    "&key=" +
+    apiKey
+  );
+};

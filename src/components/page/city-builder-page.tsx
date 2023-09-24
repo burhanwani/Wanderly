@@ -8,18 +8,29 @@ import Loader from "../ui/loader";
 import { TypographyH3 } from "../ui/typography";
 import { useAppSelector } from "../../redux/hooks";
 import { TripBasicDetailsDialog } from "../ui/feature-page/trip-basic-detail-dialog";
-import { useCreateTripMutation } from "../../redux/services/trips.services";
+import { useCreateTripV2Mutation } from "../../redux/services/trips.services";
 import { ROUTES_CONSTANTS } from "../../lib/constants/routes.constants";
 import { TripBasicDetailsDialogForm } from "../../lib/schema/city-builder-form.schema";
 import { useToast } from "../ui/use-toast";
+import {
+  isAdminUser,
+  isBetaLimitReached,
+} from "../../lib/config/app/app.config";
+import { useSession } from "next-auth/react";
 
 function CityBuilderPage() {
+  const session = useSession();
   const router = useRouter();
   const { toast } = useToast();
   const { city = "" } = useParams();
   const [fetchCity, cityResult] = useLazyGetPlaceDetailQuery();
-  const [createTrip, tripResult] = useCreateTripMutation();
-
+  const [createTrip, tripResult] = useCreateTripV2Mutation();
+  const isBetaLimitReachedFlag = useAppSelector((state) => {
+    if (session?.data?.user?.isAdmin) return false;
+    return (
+      isBetaLimitReached(Object.keys(state.trips.entities).length || 0) || true
+    );
+  });
   const placeDetails = useAppSelector(
     (state) => state.google.places.entities[city as string]
   );
@@ -47,10 +58,19 @@ function CityBuilderPage() {
     },
     [city, createTrip, router, toast]
   );
+  if (isBetaLimitReachedFlag) {
+    return (
+      <AuthChecker>
+        <Main className="items-center justify-center gap-y-2">
+          <TypographyH3>{"You have reached beta limit."}</TypographyH3>
+        </Main>
+      </AuthChecker>
+    );
+  }
   return (
     <AuthChecker>
       <Main className="items-center justify-center gap-y-2">
-        {cityResult?.isLoading && <Loader />}
+        {(cityResult?.isLoading || session.status == "loading") && <Loader />}
         {cityResult?.isError && (
           <TypographyH3>{"Invalid City Passed"}</TypographyH3>
         )}
@@ -64,7 +84,13 @@ function CityBuilderPage() {
                 onSuccess={onSubmit}
               />
             )}
-            {tripResult?.isLoading && <Loader />}
+            {tripResult?.isLoading && (
+              <Loader>
+                <div className="p-6 text-wrap flex items-center justify-center">
+                  This should only take around 20-40 seconds...
+                </div>
+              </Loader>
+            )}
             {tripResult?.isError && (
               <TypographyH3>
                 {

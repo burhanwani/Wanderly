@@ -22,12 +22,13 @@ export const getTripsFromCache = async (userId: string) => {
 
 export const putTripsInCache = async (
   userId: string,
-  data: TripModalSchemaType[]
+  data: TripModalSchemaType[] = []
 ) => {
+  if (data.length <= 0) return;
   await redisClient.lpush(`${RedisPrefix.TRIP}${userId}`, ...data);
   await redisClient.expire(
     `${RedisPrefix.TRIP}${userId}`,
-    REDIS_CACHE_EXPIRY_CONFIGURATION.TEN_MINUTES_IN_SECONDS
+    REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS
   );
   console.log(`putTripInCache by ${userId} :`, data);
 };

@@ -22,16 +22,22 @@ import { ValidationError } from "yup";
 import { TimePickerInternal } from "../time-picker";
 import moment, { Moment } from "moment";
 import ActivityLoader from "./activity-loader";
+import { Card, CardDescription, CardTitle } from "../card";
+import { Button } from "../button";
+import { useUpdateTripV2Mutation } from "../../../redux/services/trips.services";
+import { NextDayGenerationSchemaType } from "../../../app/api/v2/trip/next/route";
 
 interface IDayViewer {
   day: string;
+  index: number;
 }
 const TIME_FORMAT = "HH:mm";
 const ONE_MILLISECOND_IN_SECOND = 1000;
 
-function DayViewer({ day }: IDayViewer) {
+function DayViewer({ day, index }: IDayViewer) {
   const { toast } = useToast();
-  const [updateActivity] = useUpdateActivityMutation();
+  const [updateActivity, dragAndDropResult] = useUpdateActivityMutation();
+  const [generateActivity, generateActivityResult] = useUpdateTripV2Mutation();
   const dayConfig = useAppSelector((state) => {
     return state.days.entities[day] || null;
   });
@@ -75,14 +81,18 @@ function DayViewer({ day }: IDayViewer) {
         const startTimeInDate =
           index == 0 ? startTimeParsed : config?.[index - 1]?.travelTimeParsed;
         const allocatedTimeInMilliseconds =
-          (now?.allocatedTime || 0) * ONE_MILLISECOND_IN_SECOND;
+          ((now?.duration_seconds as number) || 0) * ONE_MILLISECOND_IN_SECOND;
+        const travelDuration =
+          (now?.duration_details?.rows?.[0]?.elements?.[0]?.duration
+            ?.value! as number) || 0;
+
         const endTimeInDate = date.addSeconds(
           startTimeInDate,
-          now?.allocatedTime || 0
+          (now?.duration_seconds as number) || 0
         );
         const travelEstimateDate = date.addSeconds(
           endTimeInDate,
-          now?.travel?.duration?.value || 0
+          travelDuration
         );
         const allocatedTimeEstimateFormatted = humanizeDuration(
           allocatedTimeInMilliseconds,
@@ -95,10 +105,9 @@ function DayViewer({ day }: IDayViewer) {
           allocatedTimeInMilliseconds
         ).trim();
         const travelTimeFormatted = humanizeDuration(
-          (now?.travel?.duration?.value || 0) * ONE_MILLISECOND_IN_SECOND
+          travelDuration * ONE_MILLISECOND_IN_SECOND
         );
-
-        config[index] = {
+        const dateConfig = {
           startTime: date.format(startTimeInDate, "HH:mm A"),
           endTime: date.format(endTimeInDate, "HH:mm A"),
           travelTime: date.format(travelEstimateDate, "HH:mm A"),
@@ -107,6 +116,7 @@ function DayViewer({ day }: IDayViewer) {
           allocatedHour,
           travelTimeFormatted,
         };
+        config[index] = dateConfig;
         return config;
       },
       {} as {
@@ -143,6 +153,38 @@ function DayViewer({ day }: IDayViewer) {
     },
     [dayConfig, toast, updateActivity]
   );
+
+  const generateActivityCallback = useCallback(() => {
+    generateActivity({
+      tripId: dayConfig?.tripId!,
+      dayNumber: index + 1,
+    }).unwrap();
+  }, [dayConfig?.tripId, generateActivity, index]);
+  if (generateActivityResult.isLoading) {
+    return (
+      <TabsContent value={day}>
+        <ActivityLoader />
+      </TabsContent>
+    );
+  }
+  if (dayConfig?.isDayGenerated == false)
+    return (
+      <TabsContent value={day}>
+        <div className="mt-4 p-4 bg-muted h-full rounded-lg min-h-[75vh] flex flex-row items-center justify-center">
+          <Card className="flex flex-col p-6 gap-6">
+            <CardTitle>
+              Let&apos;s build your itinerary for Day {index + 1}!
+            </CardTitle>
+            <CardDescription className="flex items-center justify-center">
+              <Button onClick={generateActivityCallback}>
+                Auto-generate day
+              </Button>
+            </CardDescription>
+          </Card>
+        </div>
+      </TabsContent>
+    );
+
   return (
     <TabsContent value={day}>
       {/* <div className="flex justify-between items-center">
@@ -204,6 +246,7 @@ function DayViewer({ day }: IDayViewer) {
                     index={index}
                     key={plan.placeId}
                     timingConfig={timingConfig}
+                    dragAndDropLoading={dragAndDropResult.isLoading}
                   />
                 ))}
               </div>

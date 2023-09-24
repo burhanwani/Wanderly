@@ -57,6 +57,7 @@
     "humanize-duration": "^3.29.0",
     "immer": "^10.0.2",
     "indexof": "^0.0.1",
+    "langchain": "^0.0.151",
     "lucide-react": "^0.268.0",
     "moment": "^2.29.4",
     "nanoid": "^4.0.2",

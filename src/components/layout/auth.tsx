@@ -10,11 +10,15 @@ import { Main } from "./main";
 import { usePathname } from "next/navigation";
 import Loader from "../ui/loader";
 
-interface IAuthChecker {
+export interface IAuthChecker {
   children: React.ReactNode;
+  skipTripsFetch?: boolean;
 }
 
-export default function AuthChecker({ children }: IAuthChecker) {
+export default function AuthChecker({
+  children,
+  skipTripsFetch = false,
+}: IAuthChecker) {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
   const { status } = useSession({
@@ -28,10 +32,10 @@ export default function AuthChecker({ children }: IAuthChecker) {
   });
   const [fetchTrips, tripsResult] = useLazyGetTripsQuery();
   useEffect(() => {
-    if (status == "authenticated") {
+    if (status == "authenticated" && skipTripsFetch == false) {
       fetchTrips();
     }
-  }, [fetchTrips, status]);
+  }, [fetchTrips, skipTripsFetch, status]);
   if (status == "loading" || tripsResult.isLoading)
     return (
       <Main className="items-center justify-center gap-y-2">

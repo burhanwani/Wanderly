@@ -2,13 +2,13 @@ import { getServerSession } from "next-auth";
 import { updateDayActivity } from "../../../../../lib/backend/services/days.backend.services";
 import { nextAuthOptions } from "../../../../../lib/config/auth/next-auth.config";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
-import { dayModalSchema } from "../../../../../lib/schema/day.schema";
+import { dayModalSchemaV2 } from "../../../../../lib/schema/day.v2.schema";
 
 export async function POST(request: Request) {
   const payload = await request.json();
   let validatedPayload = null;
   try {
-    validatedPayload = dayModalSchema.validateSync(payload);
+    validatedPayload = dayModalSchemaV2.validateSync(payload);
   } catch (err) {
     return RESPONSE_CONSTANTS[400];
   }
