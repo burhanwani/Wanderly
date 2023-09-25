@@ -10,7 +10,7 @@ import { getTrip } from "../../../../../lib/backend/services/trips.backend.servi
 export async function POST(req: NextRequest) {
   const session = await getServerSession(nextAuthOptions);
   const userId = session?.user?.id;
-  if (!userId) return RESPONSE_CONSTANTS[401];
+  if (!userId) return RESPONSE_CONSTANTS[401]();
   const { tripId = null } = await req.json();
   try {
     const data = await tripIdParamSchema.validate(tripId);
@@ -24,5 +24,5 @@ export async function POST(req: NextRequest) {
     if (err instanceof ValidationError)
       return RESPONSE_CONSTANTS[400](err.message);
   }
-  return RESPONSE_CONSTANTS[500];
+  return RESPONSE_CONSTANTS[500]();
 }

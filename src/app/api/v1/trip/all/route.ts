@@ -7,7 +7,7 @@ export async function GET() {
   const session = await getServerSession(nextAuthOptions);
   const userId = session?.user?.id;
   if (!userId) {
-    return RESPONSE_CONSTANTS[401];
+    return RESPONSE_CONSTANTS[401]();
   }
   try {
     const trips = await getTrips(userId);

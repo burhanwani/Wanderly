@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { ChatCompletionRequestMessage } from "openai-edge";
+import { ValidationError } from "yup";
 import { getPlaceDetail } from "../../../../../lib/backend/services/places.backend.services";
 import { nextAuthOptions } from "../../../../../lib/config/auth/next-auth.config";
 import { openAi } from "../../../../../lib/config/open-ai/open-ai.config";
@@ -50,12 +51,12 @@ export async function POST(request: Request) {
       validatedPayload =
         generateActivitiesRequestPayloadSchema.validateSync(payload);
     } catch (err) {
-      return RESPONSE_CONSTANTS[400];
+      return RESPONSE_CONSTANTS[400]();
     }
     const session = await getServerSession(nextAuthOptions);
     const userId = session?.user?.id;
     if (!userId) {
-      return RESPONSE_CONSTANTS[401];
+      return RESPONSE_CONSTANTS[401]();
     }
     const placeDetails = await getPlaceDetail(validatedPayload.placeId);
     if (placeDetails?.status != "OK")
@@ -75,8 +76,11 @@ export async function POST(request: Request) {
     console.log("response", JSON.stringify(response));
     const activities = response?.choices[0]?.message?.content;
     console.log("activities", JSON.parse(activities));
-    return RESPONSE_CONSTANTS[200];
+    return RESPONSE_CONSTANTS[200]();
   } catch (err) {
     console.log("error", err);
+    if (err instanceof ValidationError)
+      return RESPONSE_CONSTANTS[400](err.message);
   }
+  return RESPONSE_CONSTANTS[500]();
 }

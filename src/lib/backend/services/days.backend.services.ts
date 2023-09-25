@@ -25,10 +25,10 @@ export async function updateDayActivity(
   const day = await getDayFromFirebaseOrCache(validatedPayload.dayId, db);
   if (day) {
     if (day?.userId != userId) {
-      return RESPONSE_CONSTANTS[401];
+      return RESPONSE_CONSTANTS[401]();
     }
     if (day?.tripId != validatedPayload.tripId) {
-      return RESPONSE_CONSTANTS[401];
+      return RESPONSE_CONSTANTS[401]();
     }
 
     if (day?.startTime != validatedPayload.startTime) {
@@ -64,7 +64,7 @@ export async function updateDayActivity(
     await updateDayFirebaseAndCache(validatedPayload, db, validatedPayload);
     return RESPONSE_CONSTANTS[200](validatedPayload);
   } else {
-    return RESPONSE_CONSTANTS[400];
+    return RESPONSE_CONSTANTS[400]();
   }
 }
 

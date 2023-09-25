@@ -10,12 +10,12 @@ export async function POST(request: Request) {
   try {
     validatedPayload = dayModalSchemaV2.validateSync(payload);
   } catch (err) {
-    return RESPONSE_CONSTANTS[400];
+    return RESPONSE_CONSTANTS[400]();
   }
   const session = await getServerSession(nextAuthOptions);
   const userId = session?.user?.id;
   if (!userId) {
-    return RESPONSE_CONSTANTS[401];
+    return RESPONSE_CONSTANTS[401]();
   }
   return updateDayActivity(userId, validatedPayload);
 }

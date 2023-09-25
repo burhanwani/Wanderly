@@ -36,3 +36,4 @@ next-env.d.ts
 concierge-frontend-firebase.json
 concierge-firebase.json
 .env.development
+.env.production

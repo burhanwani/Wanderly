@@ -25,20 +25,20 @@ const nextDayGenerationSchema = object()
 export async function POST(req: NextRequest) {
   const session = await getServerSession(nextAuthOptions);
   const userId = session?.user?.id;
-  if (!userId) return RESPONSE_CONSTANTS[401];
+  if (!userId) return RESPONSE_CONSTANTS[401]();
   const json = await req.json();
   try {
     const data = await nextDayGenerationSchema.validate(json);
     const tripDetails = await getTrip(data?.tripId, userId);
     if (!tripDetails) {
-      return RESPONSE_CONSTANTS[404];
+      return RESPONSE_CONSTANTS[404]();
     }
     if (data.dayNumber > tripDetails?.tripDetails?.days?.length) {
-      return RESPONSE_CONSTANTS[401];
+      return RESPONSE_CONSTANTS[401]();
     }
     const builder = await getBuilder(data?.tripId);
     if (!builder) {
-      return RESPONSE_CONSTANTS[404];
+      return RESPONSE_CONSTANTS[404]();
     }
     const newMessage = builder?.messages?.map((message) => ({
       ...message,
@@ -76,5 +76,5 @@ export async function POST(req: NextRequest) {
     if (err instanceof ValidationError)
       return RESPONSE_CONSTANTS[400](err.message);
   }
-  return RESPONSE_CONSTANTS[500];
+  return RESPONSE_CONSTANTS[500]();
 }
