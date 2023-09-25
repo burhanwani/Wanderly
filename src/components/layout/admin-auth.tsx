@@ -4,11 +4,12 @@ import AuthChecker, { IAuthChecker } from "./auth";
 import appConfigSlice from "../../redux/features/auth.slice";
 import { usePathname } from "next/navigation";
 import { useAppDispatch } from "../../redux/hooks";
+import { isAdminUser } from "../../lib/config/app/app.config";
 
 export default function AdminAuth({ children }: IAuthChecker) {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
-  const { data } = useSession({
+  const session = useSession({
     required: true,
     onUnauthenticated: () => {
       dispatch(appConfigSlice.actions.clearCache());
@@ -19,7 +20,7 @@ export default function AdminAuth({ children }: IAuthChecker) {
   });
   return (
     <AuthChecker skipTripsFetch={true}>
-      {data?.user?.isAdmin ? children : "Unauthorized"}
+      {isAdminUser(session) ? children : "Unauthorized"}
     </AuthChecker>
   );
 }

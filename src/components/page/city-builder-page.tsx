@@ -26,10 +26,9 @@ function CityBuilderPage() {
   const [fetchCity, cityResult] = useLazyGetPlaceDetailQuery();
   const [createTrip, tripResult] = useCreateTripV2Mutation();
   const isBetaLimitReachedFlag = useAppSelector((state) => {
-    if (session?.data?.user?.isAdmin) return false;
-    return (
-      isBetaLimitReached(Object.keys(state.trips.entities).length || 0) || true
-    );
+    if (isAdminUser(session)) return false;
+    console.log("state.trips.entities", state.trips.entities);
+    return isBetaLimitReached(Object.keys(state.trips.entities).length || 0);
   });
   const placeDetails = useAppSelector(
     (state) => state.google.places.entities[city as string]
@@ -58,6 +57,7 @@ function CityBuilderPage() {
     },
     [city, createTrip, router, toast]
   );
+  console.log("isBetaLimitReachedFlag", isBetaLimitReachedFlag);
   if (isBetaLimitReachedFlag) {
     return (
       <AuthChecker>

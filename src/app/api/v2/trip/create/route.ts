@@ -7,7 +7,10 @@ import {
   createTripV2,
   getTripsLength,
 } from "../../../../../lib/backend/services/trips.backend.services";
-import { isBetaLimitReached } from "../../../../../lib/config/app/app.config";
+import {
+  isAdminUser,
+  isBetaLimitReached,
+} from "../../../../../lib/config/app/app.config";
 import { nextAuthOptions } from "../../../../../lib/config/auth/next-auth.config";
 import { openAi } from "../../../../../lib/config/open-ai/open-ai.config";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
@@ -292,7 +295,7 @@ export async function POST(req: NextRequest) {
     const data = await cityBuilderModalSchema.validate(json);
     const placeDetails = await getPlaceDetail(data?.placeId);
     const length = await getTripsLength(userId);
-    if (isBetaLimitReached(length) && !session?.user?.isAdmin) {
+    if (isBetaLimitReached(length) && !isAdminUser(session?.user?.email)) {
       return RESPONSE_CONSTANTS[401]("Only 3 trips are allowed in beta");
     }
     if (placeDetails?.status != "OK")

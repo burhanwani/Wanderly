@@ -141,7 +141,7 @@ const AutocompleteInput = () => {
   if (
     session.status == "authenticated" &&
     trips.length > 2 &&
-    !session?.data?.user?.isAdmin
+    !isAdminUser(session)
   ) {
     return <TypographyH4>Only 3 trips are allowed in beta</TypographyH4>;
   }
