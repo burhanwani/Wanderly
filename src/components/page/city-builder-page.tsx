@@ -27,7 +27,6 @@ function CityBuilderPage() {
   const [createTrip, tripResult] = useCreateTripV2Mutation();
   const isBetaLimitReachedFlag = useAppSelector((state) => {
     if (isAdminUser(session)) return false;
-    console.log("state.trips.entities", state.trips.entities);
     return isBetaLimitReached(Object.keys(state.trips.entities).length || 0);
   });
   const placeDetails = useAppSelector(
@@ -57,7 +56,6 @@ function CityBuilderPage() {
     },
     [city, createTrip, router, toast]
   );
-  console.log("isBetaLimitReachedFlag", isBetaLimitReachedFlag);
   if (isBetaLimitReachedFlag) {
     return (
       <AuthChecker>

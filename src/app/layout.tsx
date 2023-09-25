@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import { cn } from "../lib/utils/ui.utils";
 import { ApplicationStateProvider } from "../providers/state.provider";
 
@@ -35,6 +36,7 @@ export default function RootLayout({
               <Header />
               <Toaster />
               {children}
+              <Analytics />
             </ThemeProvider>
           </ApplicationStateProvider>
         </NextAuthSessionProvider>
