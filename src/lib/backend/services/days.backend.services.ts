@@ -115,6 +115,7 @@ export async function updateDayFirebaseAndCache(
   db = firebaseAdmin.firestore(),
   dataToUpdate: Partial<DayModalSchemaTypeV2> | DayModalSchemaTypeV2
 ) {
-  await putDayInCache(day);
+  const newDay = { ...day, ...dataToUpdate };
+  await putDayInCache(newDay);
   await db.collection(Collections.DAYS).doc(day.dayId).update(dataToUpdate);
 }

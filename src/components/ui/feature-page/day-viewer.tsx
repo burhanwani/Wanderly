@@ -100,9 +100,11 @@ function DayViewer({ day, index }: IDayViewer) {
             units: ["h"],
           }
         );
-
         const allocatedHour = onlyDigitWithOutText(
-          allocatedTimeInMilliseconds
+          allocatedTimeInMilliseconds,
+          {
+            units: ["h"],
+          }
         ).trim();
         const travelTimeFormatted = humanizeDuration(
           travelDuration * ONE_MILLISECOND_IN_SECOND
@@ -158,8 +160,9 @@ function DayViewer({ day, index }: IDayViewer) {
     generateActivity({
       tripId: dayConfig?.tripId!,
       dayNumber: index + 1,
+      dayId: day,
     }).unwrap();
-  }, [dayConfig?.tripId, generateActivity, index]);
+  }, [day, dayConfig?.tripId, generateActivity, index]);
   if (generateActivityResult.isLoading) {
     return (
       <TabsContent value={day}>

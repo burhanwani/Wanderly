@@ -24,7 +24,10 @@ import {
   durationSchema,
 } from "../../schema/distance-matrix-api.schema";
 import { ChatGptTripItineraryResponseType } from "../../schema/open-ai.schema";
-import { ChatGptTripItineraryResponseTypeV2 } from "../../schema/open-ai.v2.schema";
+import {
+  ChatGptTripGeneratorMultipleSchemaV2Type,
+  ChatGptTripItineraryResponseTypeV2,
+} from "../../schema/open-ai.v2.schema";
 import { GooglePlaceDetailResponseType } from "../../schema/place-details.schema";
 import { TripModalSchemaType, tripModalSchema } from "../../schema/trip.schema";
 import {
@@ -324,16 +327,16 @@ export async function updateNextDayOfTripV2(
   payload: NextDayGenerationSchemaType,
   builder: ChatGptTripBuilderModalSchemaType
 ) {
-  const allDays = days?.[payload?.dayNumber];
-  console.log("allDays", allDays);
+  const activities = days?.[payload?.dayNumber];
+  console.log("activities", activities);
   const places = await getPlaceDetailsFromTextParallel(
-    allDays.map((activity) => activity.google_place_name),
+    activities.map((activity) => activity.google_place_name),
     tripDetails?.tripDetails?.placeName
   );
 
   const distances = await getDistanceMatrixBetweenPlacesParallel(places);
   return updateFirebaseTripV2(
-    days,
+    activities,
     tripDetails,
     payload,
     places,
@@ -343,7 +346,7 @@ export async function updateNextDayOfTripV2(
 }
 
 async function updateFirebaseTripV2(
-  days: ChatGptTripItineraryResponseTypeV2,
+  activities: ChatGptTripGeneratorMultipleSchemaV2Type,
   tripDetails: GetTripReturnType,
   payload: NextDayGenerationSchemaType,
   places: GooglePlaceDetailResponseType[],
@@ -351,10 +354,12 @@ async function updateFirebaseTripV2(
   builder: ChatGptTripBuilderModalSchemaType
 ) {
   const db = firebaseAdmin.firestore();
-  const dayDetails = tripDetails?.daysDetails[payload.dayNumber - 1];
+  const dayDetails = tripDetails?.daysDetails?.find(
+    (day) => day.dayId == payload.dayId
+  );
   if (!dayDetails) throw new Error("Day not found");
 
-  const activities = days[payload.dayNumber].map(
+  const activitiesToAppend = activities?.map(
     (activity, activityIndex) =>
       ({
         ...activity,
@@ -362,12 +367,13 @@ async function updateFirebaseTripV2(
         duration_details: distances?.[activityIndex],
       }) as ActivityModalSchemaTypeV2
   );
-
+  console.log("activitiesToAppend", activitiesToAppend);
   const dayToReturn = dayModalSchemaV2.validateSync({
     ...dayDetails,
-    activities,
+    activities: activitiesToAppend,
     isDayGenerated: activities.length > 0,
   } as DayModalSchemaTypeV2);
+  console.log("dayToReturn", dayToReturn);
   const messageDetails = chatGptTripBuilderModalSchema.validateSync(builder);
   const promises = new Array<Promise<unknown>>();
   promises.push(updateBuilder(messageDetails));

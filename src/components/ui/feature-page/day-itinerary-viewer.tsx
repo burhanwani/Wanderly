@@ -139,9 +139,10 @@ export function DayItineraryViewer({
                       <Input
                         name="itinerary.allocatedTime"
                         type="number"
-                        className="w-16 mx-2"
+                        className="w-20 mx-2"
                         min={0}
                         max={23}
+                        step=".01"
                         value={timingConfig?.[index]?.allocatedHour}
                         onChange={inputChangeHandler}
                       />{" "}

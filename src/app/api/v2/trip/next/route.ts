@@ -19,6 +19,7 @@ const nextDayGenerationSchema = object()
   .shape({
     tripId: string().required(),
     dayNumber: number().required(),
+    dayId: string().required(),
   })
   .required();
 
