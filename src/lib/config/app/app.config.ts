@@ -9,7 +9,7 @@ const EMAIL_IDS = {
 
 export const IS_ADMIN = Object.values(EMAIL_IDS);
 
-export const BETA_LIMIT = 2;
+export const BETA_LIMIT = 3;
 
 export const isBetaLimitReached = (tripsCount = 0) => tripsCount >= BETA_LIMIT;
 

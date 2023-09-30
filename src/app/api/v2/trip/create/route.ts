@@ -16,6 +16,7 @@ import { openAi } from "../../../../../lib/config/open-ai/open-ai.config";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
 import { cityBuilderModalSchema } from "../../../../../lib/schema/city-builder-form.schema";
 import { chatGptTripItineraryResponseSchemaV2 } from "../../../../../lib/schema/open-ai.v2.schema";
+
 // const getUserInput = (data: cityBuilderFormType) => {
 //   const days = `Please generate itinerary for ${data?.days} days`;
 //   const withStatement =
@@ -198,7 +199,7 @@ json
 const getPerDayItinerary = (
   location: string,
   data: cityBuilderFormType,
-  removeAdditionInformation = true
+  removeAdditionInformation = false
 ) => {
   const additionalInformation = removeAdditionInformation
     ? ""
@@ -271,6 +272,64 @@ json
 `;
 };
 
+const getPerDayItineraryOptimized = (
+  location: string,
+  data: cityBuilderFormType,
+  removeAdditionInformation = false
+) => `Craft a 1-day of ${
+  data.days
+} day ${location} trip itinerary in JSON. Include diverse activities: tourist spots, hidden gems, meals, cultural experiences, and outdoor adventures. For each activity, specify the time of day (morning, noon, evening), Google Place Name, estimated duration in seconds, and other relevant details.
+
+json
+
+{
+  "1": [
+    {
+      "name": "[Breakfast] at [Place]",
+      "time_of_day": "morning",
+      "google_place_name": "[Google Place]",
+      "duration_seconds": "[Duration]",
+      "description": "Breakfast at [Place].",      
+      ${
+        removeAdditionInformation
+          ? ""
+          : `"booking": "[Required/Not required/Recommended]",
+      "budget": "$[Amount]",      
+      "popularity": "[Tourist Hotspot/Hidden Gem]",
+      "reasoning": "[Why visit]",
+      "tips": "[Visitor tips]"`
+      }
+    },
+    {
+      "name": "[Morning Activity]",
+      "time_of_day": "morning",
+      ...
+    },
+    {
+      "name": "[Lunch] at [Place]",
+      "time_of_day": "noon",
+      ...
+    },
+    {
+      "name": "[Noon Activity]",
+      "time_of_day": "noon",
+      ...
+    },
+    {
+      "name": "[Dinner] at [Place]",
+      "time_of_day": "evening",
+      ...
+    },
+    {
+      "name": "[Evening Activity]",
+      "time_of_day": "evening",
+      ...
+    }
+  ]
+}
+
+Replace placeholders (e.g., [Breakfast]) with actual values.`;
+
 const getMessage = (
   location: string,
   data: cityBuilderFormType
@@ -287,6 +346,7 @@ const getMessage = (
 type cityBuilderFormType = InferType<typeof cityBuilderModalSchema>;
 
 export async function POST(req: NextRequest) {
+  console.time("Create trip");
   const session = await getServerSession(nextAuthOptions);
   const userId = session?.user?.id;
   if (!userId) return RESPONSE_CONSTANTS[401]();
@@ -326,6 +386,7 @@ export async function POST(req: NextRequest) {
       messages,
       data.days
     );
+    console.timeEnd("Create trip");
     return RESPONSE_CONSTANTS[200](trip);
   } catch (err) {
     console.log("error", err);

@@ -85,7 +85,7 @@ function CityBuilderPage() {
             {tripResult?.isLoading && (
               <Loader>
                 <div className="p-6 text-wrap flex items-center justify-center">
-                  This should only take around 20-40 seconds...
+                  This should only take around 20-25 seconds...
                 </div>
               </Loader>
             )}
