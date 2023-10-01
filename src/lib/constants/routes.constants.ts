@@ -11,6 +11,7 @@ const ROUTES_CONSTANTS = {
   tripBuilder: (placeId: string, tripId: string) =>
     `/${placeId}/builder/${tripId}`,
   rateLimit: "/429",
+  feedback: "/feedback",
 };
 
 const API_ROUTES_CONSTANTS = {
