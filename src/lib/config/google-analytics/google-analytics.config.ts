@@ -1,10 +1,6 @@
 import ReactGA from "react-ga4";
 
 export const initGA = (userId: string | undefined) => {
-  console.log(
-    "process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID",
-    process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-  );
   ReactGA.initialize(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID!, {
     testMode: true,
     gaOptions: {
