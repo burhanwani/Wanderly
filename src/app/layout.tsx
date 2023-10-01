@@ -9,6 +9,7 @@ import { ThemeProvider } from "../providers/theme.provider";
 import { Header } from "@/components/layout/header";
 import NextAuthSessionProvider from "../providers/session.provider";
 import { Toaster } from "../components/ui/toaster";
+import Script from "next/script";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -23,6 +24,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <Script
+        strategy="lazyOnload"
+        src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_MEASUREMENT_ID}`}
+      />
+
+      <Script strategy="lazyOnload" id="google-analytics">
+        {`window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', "${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_MEASUREMENT_ID}");
+                `}
+      </Script>
       <body
         className={cn(
           inter.className,

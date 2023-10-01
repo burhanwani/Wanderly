@@ -1,26 +1,9 @@
-import {
-  Trash,
-  Calendar,
-  Clock,
-  Footprints,
-  Map,
-  DollarSign,
-  DollarSignIcon,
-  BookIcon,
-  XIcon,
-  LocateIcon,
-  FileScan,
-  CreditCard,
-  Star,
-  CarFront,
-} from "lucide-react";
+import { Trash, Calendar, Clock, Map, CarFront } from "lucide-react";
 import {
   useCallback,
   ChangeEvent,
   useMemo,
   useState,
-  useEffect,
-  RefObject,
   Dispatch,
   SetStateAction,
 } from "react";
@@ -29,7 +12,7 @@ import { Button } from "../button";
 import { Card, CardHeader, CardTitle, CardContent } from "../card";
 import { Separator } from "../separator";
 import { Input } from "../input";
-import { TypographyH4, TypographyP } from "../typography";
+import { TypographyP } from "../typography";
 import { useAppSelector } from "../../../redux/hooks";
 import { useUpdateActivityMutation } from "../../../redux/services/days.services";
 import { number } from "yup";
@@ -40,21 +23,11 @@ import {
   DayModalSchemaTypeV2,
 } from "../../../lib/schema/day.v2.schema";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../dialog";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "../tooltip";
-import { DialogClose } from "@radix-ui/react-dialog";
-import { MarkerClickRef } from "../../page/feature-page";
 
 interface IDayItineraryViewer {
   day: DayModalSchemaTypeV2;
@@ -124,21 +97,25 @@ export function DayItineraryViewer({
     },
     [day, plan.placeId, updateActivity]
   );
-  const onDelete = useCallback(() => {
-    const dayToUpdate = {
-      ...day,
-      activities: day.activities
-        .filter((_plan, _index) => {
-          return _plan.placeId != plan.placeId;
-        })
-        .map((_plan) => ({ ..._plan })),
-    };
-    updateActivity(dayToUpdate)
-      .unwrap()
-      .finally(() => setShowDistanceLoading(() => false));
-  }, [day, plan.placeId, updateActivity]);
+  const onDelete = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      const dayToUpdate = {
+        ...day,
+        activities: day.activities
+          .filter((_plan, _index) => {
+            return _plan.placeId != plan.placeId;
+          })
+          .map((_plan) => ({ ..._plan })),
+      };
+      updateActivity(dayToUpdate)
+        .unwrap()
+        .finally(() => setShowDistanceLoading(() => false));
+    },
+    [day, plan.placeId, updateActivity]
+  );
   const imageUrl = useMemo(() => {
-    if (place?.result?.photos?.length || 0 > 0) {
+    if ((place?.result?.photos || []).length > 0) {
       let photoReference = place?.result?.photos?.[0]?.photo_reference;
       const photo = place?.result?.photos?.find(
         (_photo) => _photo.width > _photo?.height
