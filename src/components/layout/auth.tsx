@@ -9,6 +9,7 @@ import appConfigSlice from "../../redux/features/auth.slice";
 import { Main } from "./main";
 import { usePathname } from "next/navigation";
 import Loader from "../ui/loader";
+import { sendGAEvent } from "../../lib/config/google-analytics/google-analytics.config";
 
 export interface IAuthChecker {
   children: React.ReactNode;
@@ -21,9 +22,13 @@ export default function AuthChecker({
 }: IAuthChecker) {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
-  const { status } = useSession({
+  const { status, data } = useSession({
     required: true,
     onUnauthenticated: () => {
+      sendGAEvent(
+        "UNAUTHORIZED_USER",
+        `unauthorized user accessing ${pathname}`
+      );
       dispatch(appConfigSlice.actions.clearCache());
       signIn("google", {
         callbackUrl: pathname,
@@ -33,9 +38,25 @@ export default function AuthChecker({
   const [fetchTrips, tripsResult] = useLazyGetTripsQuery();
   useEffect(() => {
     if (status == "authenticated" && skipTripsFetch == false) {
-      fetchTrips();
+      fetchTrips()
+        .then(() => {
+          sendGAEvent(
+            "Get_My_Trips",
+            "All trips for user was loaded",
+            "Load all trip",
+            data?.user?.id
+          );
+        })
+        .catch(() => {
+          sendGAEvent(
+            "Failed_To_Loaded_My_Trips",
+            "Failed to load trip for user",
+            "Failed to load trip for user",
+            data?.user?.id
+          );
+        });
     }
-  }, [fetchTrips, skipTripsFetch, status]);
+  }, [data?.user?.id, fetchTrips, skipTripsFetch, status]);
   if (status == "loading" || tripsResult.isLoading)
     return (
       <Main className="items-center justify-center gap-y-2">

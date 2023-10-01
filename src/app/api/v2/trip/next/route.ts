@@ -7,6 +7,10 @@ import {
   updateNextDayOfTripV2,
 } from "../../../../../lib/backend/services/trips.backend.services";
 import { nextAuthOptions } from "../../../../../lib/config/auth/next-auth.config";
+import {
+  logDevDebug,
+  logError,
+} from "../../../../../lib/config/logger/logger.config";
 import { openAi } from "../../../../../lib/config/open-ai/open-ai.config";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
 import { chatGptTripItineraryResponseSchemaV2 } from "../../../../../lib/schema/open-ai.v2.schema";
@@ -26,19 +30,32 @@ const nextDayGenerationSchema = object()
 export async function POST(req: NextRequest) {
   const session = await getServerSession(nextAuthOptions);
   const userId = session?.user?.id;
-  if (!userId) return RESPONSE_CONSTANTS[401]();
-  const json = await req.json();
+  if (!userId) {
+    logError("Unauthenticated v1 day generation");
+    return RESPONSE_CONSTANTS[401]();
+  }
+  console.time(`Create Next Day trip for ${userId}`);
   try {
+    const json = await req.json();
     const data = await nextDayGenerationSchema.validate(json);
     const tripDetails = await getTrip(data?.tripId, userId);
     if (!tripDetails) {
+      logError(`v2 day generation | Invalid Trip ${data?.tripId}`, userId);
       return RESPONSE_CONSTANTS[404]();
     }
     if (data.dayNumber > tripDetails?.tripDetails?.days?.length) {
+      logError(
+        `v2 day generation | Invalid Day Number ${data?.dayNumber} | Trip Id: ${data?.tripId}`,
+        userId
+      );
       return RESPONSE_CONSTANTS[401]();
     }
     const builder = await getBuilder(data?.tripId);
     if (!builder) {
+      logError(
+        `v2 day generation | Builder not found | Trip Id: ${data?.tripId}`,
+        userId
+      );
       return RESPONSE_CONSTANTS[404]();
     }
     const newMessage = builder?.messages?.map((message) => ({
@@ -56,13 +73,15 @@ export async function POST(req: NextRequest) {
       stream: false,
     });
     const daysResponse = await res.json();
-    console.log("next daysResponse", daysResponse);
+    logDevDebug("v2 Next day generation | ChatGpt Response", daysResponse);
     const days = daysResponse?.choices[0]?.message?.content;
     const parsedDays = JSON.parse(days);
-    console.log("next parsedDays", parsedDays);
     const validatedDays =
       chatGptTripItineraryResponseSchemaV2.validateSync(parsedDays);
-    console.log("next validatedDays", validatedDays);
+    logDevDebug(
+      `v2 Next day generation | day number : ${data?.dayNumber} | ChatGpt Parsed & Validated Response`,
+      validatedDays
+    );
     if (daysResponse?.choices[0]?.message) builder.messages = newMessage;
     builder.messages.push(daysResponse?.choices[0]?.message);
     const dayDetailsWithPlaceDetails = await updateNextDayOfTripV2(
@@ -71,11 +90,15 @@ export async function POST(req: NextRequest) {
       data,
       builder
     );
+    console.timeEnd(`Create Next Day trip for ${userId}`);
     return RESPONSE_CONSTANTS[200](dayDetailsWithPlaceDetails);
   } catch (err) {
-    console.log("error", err);
-    if (err instanceof ValidationError)
+    if (err instanceof ValidationError) {
+      logError(`v2 Next day generation | Invalid Payload`, userId, err);
       return RESPONSE_CONSTANTS[400](err.message);
+    } else {
+      logError(`v2 Next day generation | Unknown Error`, userId, err);
+    }
   }
   return RESPONSE_CONSTANTS[500]();
 }

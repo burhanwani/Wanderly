@@ -106,6 +106,10 @@ export function TypographyLarge({ children, className }: ITypography) {
   );
 }
 
+export function TypographyRegular({ children, className }: ITypography) {
+  return <div className={cn("text-base", className)}>{children}</div>;
+}
+
 export function TypographySmall({ children, className }: ITypography) {
   return (
     <small className={cn("text-sm font-medium leading-none", className)}>

@@ -2,10 +2,8 @@
 import { Main } from "../layout/main";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import AutocompleteInput from "../ui/search";
-import {
-  BACKGROUNDS,
-  getRandomBackground,
-} from "../../lib/config/ui/home-background.ui.config";
+
+import CookieConsent from "react-cookie-consent";
 
 export default function HomePage() {
   return (
@@ -31,6 +29,9 @@ export default function HomePage() {
           </div>
         </CardContent>
       </Card>
+      <CookieConsent>
+        This website uses cookies to enhance the user experience.
+      </CookieConsent>
     </Main>
   );
 }

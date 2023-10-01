@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from "axios";
+import { logDevDebug, logError } from "../../config/logger/logger.config";
 import { GoogleEndPoints } from "../../constants/google.constants";
 import {
   DistanceMatrixResponseSchemaType,
@@ -28,6 +29,7 @@ export const getLocationDetailsByPlaceId = async (
     string,
     AxiosResponse<GooglePlaceDetailResponseType>
   >(url);
+  logDevDebug("Place Details Google", response);
   return response;
 };
 
@@ -41,7 +43,6 @@ export const getPlaceDetailFromText = async (
     fields: "place_id",
     locationbias: `region:${region}`,
   });
-  console.log("google find place from text : place , region : ", url);
   const response = await axios.get<
     string,
     AxiosResponse<GooglePlaceFromTextSchemaType>
@@ -49,14 +50,13 @@ export const getPlaceDetailFromText = async (
   const validatedResponse = googlePlaceFromTextSchema.validateSync(
     response?.data
   );
-  console.log(
-    "GooglePlaceFromTextSchemaType validatedResponse",
+  logDevDebug(
+    `Place From Text Details Google | Payload: ${place + ", " + region} | `,
     validatedResponse
   );
   const placeDetails = await getPlaceDetail(
     validatedResponse?.candidates?.[0]?.place_id
   );
-  console.log("GooglePlaceFromTextSchemaType placeDetails", placeDetails);
   return placeDetails;
 };
 
@@ -99,7 +99,7 @@ export const getDistanceMatrixBetweenPlaces = async (
     await putDistanceInCache(distanceCacheKey, validatedResponse);
     return validatedResponse;
   } catch (err) {
-    console.log("error", err);
+    logError("Google Distance Failed", "authenticated", err);
     return null;
   }
 };

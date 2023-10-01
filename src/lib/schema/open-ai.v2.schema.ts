@@ -14,6 +14,7 @@ export const chatGptTripGeneratorSchemaV2 = object()
     popularity: string().optional(),
     reasoning: string().optional(),
     tips: string().optional(),
+    placeId: string().optional(), // Doesn't return placeId
   })
   .required();
 

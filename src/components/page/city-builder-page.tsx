@@ -2,7 +2,7 @@
 import { useParams, useRouter } from "next/navigation";
 import AuthChecker from "../layout/auth";
 import { Main } from "../layout/main";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useLazyGetPlaceDetailQuery } from "../../redux/services/google.services";
 import Loader from "../ui/loader";
 import { TypographyH3 } from "../ui/typography";
@@ -17,6 +17,7 @@ import {
   isBetaLimitReached,
 } from "../../lib/config/app/app.config";
 import { useSession } from "next-auth/react";
+import { sendGAEvent } from "../../lib/config/google-analytics/google-analytics.config";
 
 function CityBuilderPage() {
   const session = useSession();
@@ -39,15 +40,25 @@ function CityBuilderPage() {
     (data: TripBasicDetailsDialogForm) => {
       createTrip(data)
         .unwrap()
-        .then((response) =>
+        .then((response) => {
+          sendGAEvent(
+            "Trip_Created",
+            "Trip Generated for day 1 for city",
+            city as string
+          );
           router.push(
             ROUTES_CONSTANTS.tripBuilder(
               city as string,
               response?.tripDetails?.tripId
             )
-          )
-        )
-        .catch(() => {
+          );
+        })
+        .catch((err) => {
+          sendGAEvent(
+            "Trip_Creation_Failed",
+            "Trip Generated for day 1 for city",
+            err?.toString()
+          );
           toast({
             title: "Something went wrong while creating trip",
             variant: "destructive",

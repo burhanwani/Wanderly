@@ -1,9 +1,24 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import React, {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import {
+  GoogleMap,
+  GoogleMapProps,
+  MarkerF,
+  MarkerProps,
+  useJsApiLoader,
+} from "@react-google-maps/api";
 import { useTheme } from "next-themes";
 import { cn } from "../../lib/utils/ui.utils";
 import { useAppSelector } from "../../redux/hooks";
 import { Inter } from "next/font/google";
+import { sendGAEvent } from "../../lib/config/google-analytics/google-analytics.config";
+import { ActivityModalSchemaTypeV2 } from "../../lib/schema/day.v2.schema";
 
 interface IConciergeGoogleMap {
   initialPosition: {
@@ -12,9 +27,10 @@ interface IConciergeGoogleMap {
   };
   className?: string;
   currentDay: string;
+  setActivity: Dispatch<SetStateAction<ActivityModalSchemaTypeV2 | null>>;
 }
 const inter = Inter({ subsets: ["latin"] });
-const googleMapsDark = {
+const googleMapsDark: GoogleMapProps["options"] = {
   styles: [
     { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
     {
@@ -99,10 +115,12 @@ const googleMapsDark = {
     },
   ],
   mapTypeControl: false,
+  streetViewControl: false,
 };
 
-const googleMapsLight = {
+const googleMapsLight: GoogleMapProps["options"] = {
   mapTypeControl: false,
+  streetViewControl: false,
   styles: [
     {
       featureType: "landscape",
@@ -294,25 +312,28 @@ function ConciergeGoogleMap({
   initialPosition,
   className = "",
   currentDay = "",
+  setActivity,
 }: IConciergeGoogleMap) {
+  const { theme = "light" } = useTheme();
   const [position, setPosition] = useState<
     IConciergeGoogleMap["initialPosition"]
   >({ lat: 0, lng: 0 });
   const day = useAppSelector((state) => state.days.entities[currentDay]);
   const placeDetails = useAppSelector((state) => state.google.places.entities);
-  const { theme = "light" } = useTheme();
+
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY!,
   });
 
   const activityWithGoogleMeta = useMemo(() => {
-    return day?.activities?.map((activity) => {
+    return (day?.activities || []).map((activity) => {
       const location =
         placeDetails[activity?.placeId!]?.result.geometry.location;
-      return { ...activity, location };
+
+      return { activity, location, theme };
     });
-  }, [day?.activities, placeDetails]);
+  }, [day?.activities, placeDetails, theme]);
   useEffect(() => {
     setPosition(() => initialPosition);
   }, [initialPosition]);
@@ -332,7 +353,9 @@ function ConciergeGoogleMap({
         );
       });
       map.fitBounds(bounds);
+      map.setStreetView(null);
       setMap(map);
+      sendGAEvent("Google_Map_Loaded", "Google Maps Loaded");
     },
     [activityWithGoogleMeta]
   );
@@ -340,6 +363,31 @@ function ConciergeGoogleMap({
   const onUnmount = React.useCallback(function callback(map: google.maps.Map) {
     setMap(null);
   }, []);
+
+  const getPositionForMarker = useCallback(
+    (activity: (typeof activityWithGoogleMeta)[0]) => {
+      return {
+        lat: activity?.location?.lat!,
+        lng: activity?.location?.lng!,
+      };
+    },
+    []
+  );
+
+  const getLabelForMarker = useCallback(
+    (activity: (typeof activityWithGoogleMeta)[0]) => {
+      return {
+        text: (activity?.activity?.name! as string) || "",
+        className: cn(
+          "bg-background/70 text-foreground",
+          inter.className,
+          `p-2 font-semibold border rounded-md mb-8`
+        ),
+        color: theme == "dark" ? "hsl(210 40% 98%)" : undefined,
+      } as MarkerProps["label"];
+    },
+    [theme]
+  );
 
   return isLoaded ? (
     <GoogleMap
@@ -349,21 +397,20 @@ function ConciergeGoogleMap({
       onLoad={onLoad}
       options={theme == "dark" ? googleMapsDark : googleMapsLight}
       onUnmount={onUnmount}
+      clickableIcons={false}
     >
-      {activityWithGoogleMeta?.map((activity) => (
-        <Marker
-          position={{
-            lat: activity?.location?.lat!,
-            lng: activity?.location?.lng!,
-          }}
-          key={activity.placeId}
-          label={{
-            text: (activity?.name! as string) || "",
-            className: `text-foreground bg-background/70 p-2 ${inter.className} font-semibold border rounded-md mb-8`,
-            color: theme == "dark" ? "hsl(210 40% 98%)" : undefined,
-          }}
-        />
-      ))}
+      {activityWithGoogleMeta?.map((activity) => {
+        const position = getPositionForMarker(activity);
+        const label = getLabelForMarker(activity);
+        return (
+          <MarkerF
+            position={position}
+            key={activity?.activity?.placeId}
+            label={label}
+            onClick={() => setActivity(activity?.activity)}
+          />
+        );
+      })}
     </GoogleMap>
   ) : (
     <></>
@@ -371,4 +418,5 @@ function ConciergeGoogleMap({
 }
 ConciergeGoogleMap.displayName = "ConciergeGoogleMap";
 
+// export default ConciergeGoogleMap;
 export default React.memo(ConciergeGoogleMap);

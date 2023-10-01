@@ -12,6 +12,10 @@ import {
   isBetaLimitReached,
 } from "../../../../../lib/config/app/app.config";
 import { nextAuthOptions } from "../../../../../lib/config/auth/next-auth.config";
+import {
+  logDevDebug,
+  logError,
+} from "../../../../../lib/config/logger/logger.config";
 import { openAi } from "../../../../../lib/config/open-ai/open-ai.config";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
 import { cityBuilderModalSchema } from "../../../../../lib/schema/city-builder-form.schema";
@@ -346,21 +350,30 @@ const getMessage = (
 type cityBuilderFormType = InferType<typeof cityBuilderModalSchema>;
 
 export async function POST(req: NextRequest) {
-  console.time("Create trip");
   const session = await getServerSession(nextAuthOptions);
   const userId = session?.user?.id;
-  if (!userId) return RESPONSE_CONSTANTS[401]();
-  const json = await req.json();
+  if (!userId) {
+    logError("Unauthenticated v1 day generation");
+    return RESPONSE_CONSTANTS[401]();
+  }
+  console.time(`Create trip for ${userId}`);
+
   try {
+    const json = await req.json();
     const data = await cityBuilderModalSchema.validate(json);
     const placeDetails = await getPlaceDetail(data?.placeId);
     const length = await getTripsLength(userId);
     if (isBetaLimitReached(length) && !isAdminUser(session?.user?.email)) {
+      logError("v2 day generation | Trip Limit Hit", userId);
       return RESPONSE_CONSTANTS[401]("Only 3 trips are allowed in beta");
     }
-    if (placeDetails?.status != "OK")
+    if (placeDetails?.status != "OK") {
+      logError(
+        `v2 day generation | Invalid Place Id : ${data?.placeId}`,
+        userId
+      );
       return RESPONSE_CONSTANTS[400]("Invalid Place ID");
-
+    }
     const messages = getMessage(placeDetails?.result?.name, data);
     const res = await openAi.createChatCompletion({
       model: "gpt-3.5-turbo",
@@ -370,13 +383,15 @@ export async function POST(req: NextRequest) {
       stream: false,
     });
     const daysResponse = await res.json();
-    console.log("daysResponse", daysResponse);
+    logDevDebug("v2 day generation | ChatGpt Response", daysResponse);
     const days = daysResponse?.choices[0]?.message?.content;
     const parsedDays = JSON.parse(days);
-    console.log("parsedDays", parsedDays);
     const validatedDays =
       chatGptTripItineraryResponseSchemaV2.validateSync(parsedDays);
-    console.log("validatedDays", validatedDays);
+    logDevDebug(
+      "v2 day generation | ChatGpt Parsed & Validated Response",
+      validatedDays
+    );
     if (daysResponse?.choices[0]?.message)
       messages.push(daysResponse?.choices[0]?.message);
     const trip = await createTripV2(
@@ -386,12 +401,15 @@ export async function POST(req: NextRequest) {
       messages,
       data.days
     );
-    console.timeEnd("Create trip");
+    console.timeEnd(`Create trip for ${userId}`);
     return RESPONSE_CONSTANTS[200](trip);
   } catch (err) {
-    console.log("error", err);
-    if (err instanceof ValidationError)
+    if (err instanceof ValidationError) {
+      logError(`v2 day generation | Invalid Payload`, userId, err);
       return RESPONSE_CONSTANTS[400](err.message);
+    } else {
+      logError(`v2 day generation | Unknown Error`, userId, err);
+    }
   }
   return RESPONSE_CONSTANTS[500]();
 }

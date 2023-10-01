@@ -1,3 +1,4 @@
+import { logCacheDebug } from "../../config/logger/logger.config";
 import {
   REDIS_CACHE_EXPIRY_CONFIGURATION,
   RedisPrefix,
@@ -10,8 +11,8 @@ import {
 
 export const getPlaceFromCache = async (placeId: string) => {
   const data = await redisClient.get(`${RedisPrefix.PLACE}${placeId}`);
-  console.log(`getPlaceFromCache ${placeId}`, data);
   try {
+    logCacheDebug("Get Place", placeId, data);
     return googlePlaceDetailResponseSchema.validateSync(data);
   } catch (err) {
     return null;
@@ -26,6 +27,6 @@ export const putPlaceInCache = async (place: GooglePlaceDetailResponseType) => {
       REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS,
       place
     );
-    console.log(`putPlaceInCache ${placeId}`, place);
+    logCacheDebug("Put Place", placeId, place);
   }
 };

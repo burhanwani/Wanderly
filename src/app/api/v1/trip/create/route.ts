@@ -1,6 +1,9 @@
+import { getServerSession } from "next-auth";
 import { NextRequest } from "next/server";
 import { ChatCompletionRequestMessage } from "openai-edge";
 import { InferType } from "yup";
+import { nextAuthOptions } from "../../../../../lib/config/auth/next-auth.config";
+import { logError } from "../../../../../lib/config/logger/logger.config";
 import { TripWith } from "../../../../../lib/constants/firebase.constants";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
 import { cityBuilderModalSchema } from "../../../../../lib/schema/city-builder-form.schema";
@@ -51,6 +54,12 @@ allocated_time = time that will be spent on that place in seconds.`,
 type cityBuilderFormType = InferType<typeof cityBuilderModalSchema>;
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(nextAuthOptions);
+  const userId = session?.user?.id;
+  if (!userId) {
+    return RESPONSE_CONSTANTS[401]();
+  }
+  logError("v1 trip generation", userId);
   return RESPONSE_CONSTANTS[405]();
   // const session = await getServerSession(nextAuthOptions);
   // const userId = session?.user?.id;
@@ -90,7 +99,6 @@ export async function POST(req: NextRequest) {
   //   );
   //   return RESPONSE_CONSTANTS[200](trip);
   // } catch (err) {
-  //   console.log("error", err);
   //   if (err instanceof ValidationError)
   //     return RESPONSE_CONSTANTS[400](err.message);
   // }

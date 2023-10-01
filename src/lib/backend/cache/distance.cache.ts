@@ -1,3 +1,4 @@
+import { logCacheDebug } from "../../config/logger/logger.config";
 import {
   REDIS_CACHE_EXPIRY_CONFIGURATION,
   RedisPrefix,
@@ -17,8 +18,8 @@ import { GooglePlaceDetailResponseType } from "../../schema/place-details.schema
 
 export const getDistanceFromCache = async (key: string) => {
   const data = await redisClient.get(`${RedisPrefix.DISTANCE}${key}`);
-  console.log(`getPlaceFromCache ${key}`, data);
   try {
+    logCacheDebug("Get Google Distance", key, data);
     return distanceMatrixResponseSchema.validateSync(data);
   } catch (err) {
     return null;
@@ -35,7 +36,7 @@ export const putDistanceInCache = async (
       REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS,
       response
     );
-    console.log(`putPlaceInCache ${key}`, response);
+    logCacheDebug("Put Google Distance", key, response);
   }
 };
 

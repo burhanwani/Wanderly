@@ -1,4 +1,10 @@
-import { useMemo, useCallback } from "react";
+import {
+  useMemo,
+  useCallback,
+  RefObject,
+  Dispatch,
+  SetStateAction,
+} from "react";
 
 import { Label } from "../label";
 import { TabsContent } from "../tabs";
@@ -7,7 +13,7 @@ import {
   DropResult,
   Droppable,
   ResponderProvided,
-} from "react-beautiful-dnd";
+} from "@hello-pangea/dnd";
 import humanizeDuration from "humanize-duration";
 import date from "date-and-time";
 import { onlyDigitWithOutText } from "../../../lib/utils/ui.utils";
@@ -25,16 +31,22 @@ import ActivityLoader from "./activity-loader";
 import { Card, CardDescription, CardTitle } from "../card";
 import { Button } from "../button";
 import { useUpdateTripV2Mutation } from "../../../redux/services/trips.services";
-import { NextDayGenerationSchemaType } from "../../../app/api/v2/trip/next/route";
+import { format, setHours, setMinutes } from "date-fns";
+import { sendGAEvent } from "../../../lib/config/google-analytics/google-analytics.config";
+import { useSession } from "next-auth/react";
+import { MarkerClickRef } from "../../page/feature-page";
+import { ActivityModalSchemaTypeV2 } from "../../../lib/schema/day.v2.schema";
 
 interface IDayViewer {
   day: string;
   index: number;
+  setActivity: Dispatch<SetStateAction<ActivityModalSchemaTypeV2 | null>>;
 }
-const TIME_FORMAT = "HH:mm";
-const ONE_MILLISECOND_IN_SECOND = 1000;
+export const TIME_FORMAT = "HH:mm";
+export const ONE_MILLISECOND_IN_SECOND = 1000;
 
-function DayViewer({ day, index }: IDayViewer) {
+function DayViewer({ day, index, setActivity }: IDayViewer) {
+  const { data } = useSession();
   const { toast } = useToast();
   const [updateActivity, dragAndDropResult] = useUpdateActivityMutation();
   const [generateActivity, generateActivityResult] = useUpdateTripV2Mutation();
@@ -49,6 +61,7 @@ function DayViewer({ day, index }: IDayViewer) {
     (result: DropResult, provided: ResponderProvided) => {
       const destinationIndex = result?.destination?.index || 0;
       const sourceIndex = result?.source?.index || 0;
+      if (destinationIndex == sourceIndex) return;
       // Update backend and redux store
       if (dayConfig) {
         const newActivities = [...(dayConfig?.activities || [])];
@@ -56,7 +69,19 @@ function DayViewer({ day, index }: IDayViewer) {
         newActivities?.splice(destinationIndex, 0, removed);
         updateActivity({ ...dayConfig, activities: newActivities })
           .unwrap()
-          .catch(() => {
+          .then(() => {
+            sendGAEvent(
+              "Main_Feature_Page_Activity_DND",
+              "Activity was dragged and dropped by user in Main page"
+            );
+          })
+          .catch((err) => {
+            sendGAEvent(
+              "Main_Feature_Page_Activity_DND_Failed",
+              "Failed : Activity was dragged and dropped by user in Main page",
+              err?.toString(),
+              data?.user?.id
+            );
             toast({
               title: "Something went wrong while saving activity order",
               variant: "destructive",
@@ -64,16 +89,14 @@ function DayViewer({ day, index }: IDayViewer) {
           });
       }
     },
-    [dayConfig, toast, updateActivity]
+    [data?.user?.id, dayConfig, toast, updateActivity]
   );
-  const momentStartTime = useMemo(() => {
-    const now = moment();
-    const time = (dayConfig?.startTime || "").split(":");
-    if (time.length >= 2) {
-      now.hours(parseInt(time?.[0]));
-      now.minutes(parseInt(time?.[1]));
-    }
-    return now;
+  const dateFnsStartTime = useMemo(() => {
+    const timeString = dayConfig?.startTime || "09:00";
+    const [hours, minutes] = timeString.split(":").map(Number);
+
+    const dateWithTime = setMinutes(setHours(new Date(), hours), minutes);
+    return dateWithTime;
   }, [dayConfig?.startTime]);
   const timingConfig = useMemo(() => {
     return (dayConfig?.activities || []).reduce(
@@ -136,15 +159,34 @@ function DayViewer({ day, index }: IDayViewer) {
   }, [dayConfig?.activities, startTimeParsed]);
 
   const startTimeOnChange = useCallback(
-    (newValue: Moment) => {
-      const parsedStartTime = newValue.format(TIME_FORMAT);
+    (newValue: Date | null) => {
       try {
-        const startTimeValidated =
-          startTimeSchema.validateSync(parsedStartTime);
-        if (dayConfig)
-          updateActivity({ ...dayConfig, startTime: startTimeValidated });
-        else throw new Error("Invalid Day Config");
+        const timeString = format(newValue as Date, TIME_FORMAT);
+        const startTimeValidated = startTimeSchema.validateSync(timeString);
+        if (dayConfig) {
+          updateActivity({ ...dayConfig, startTime: startTimeValidated })
+            .unwrap()
+            .then(() => {})
+            .catch((err) => {
+              sendGAEvent(
+                "Main_Feature_Page_Activity_Update_Start_Time_Failed",
+                "Failed : Activity start time update by user in Main page",
+                err?.toString(),
+                data?.user?.id
+              );
+            });
+        } else {
+          sendGAEvent(
+            "Main_Feature_Page_Day_Wrong_Start_Time",
+            "User set bad start time"
+          );
+          throw new Error("Invalid Day Config");
+        }
       } catch (err) {
+        sendGAEvent(
+          "Main_Feature_Page_Day_Wrong_Start_Time",
+          "User set bad start time"
+        );
         if (err instanceof ValidationError) {
           toast({
             title: err?.message,
@@ -153,7 +195,7 @@ function DayViewer({ day, index }: IDayViewer) {
         }
       }
     },
-    [dayConfig, toast, updateActivity]
+    [data?.user?.id, dayConfig, toast, updateActivity]
   );
 
   const generateActivityCallback = useCallback(() => {
@@ -161,11 +203,29 @@ function DayViewer({ day, index }: IDayViewer) {
       tripId: dayConfig?.tripId!,
       dayNumber: index + 1,
       dayId: day,
-    }).unwrap();
-  }, [day, dayConfig?.tripId, generateActivity, index]);
+    })
+      .unwrap()
+      .then(() => {
+        sendGAEvent(
+          "Main_Feature_Page_New_Day_Generated",
+          "A new day was generated by user"
+        );
+      })
+      .catch((err) => {
+        sendGAEvent(
+          "Main_Feature_Page_New_Day_Failure",
+          "A new day generation failed by user",
+          err?.toString(),
+          data?.user?.id
+        );
+      });
+  }, [data?.user?.id, day, dayConfig?.tripId, generateActivity, index]);
   if (generateActivityResult.isLoading) {
     return (
       <TabsContent value={day}>
+        <div className="p-6 text-wrap flex items-center justify-center">
+          This should only take around 20-25 seconds...
+        </div>
         <ActivityLoader />
       </TabsContent>
     );
@@ -216,7 +276,7 @@ function DayViewer({ day, index }: IDayViewer) {
         <div className="w-8/12">
           <TypographyH4>Itinerary</TypographyH4>
         </div>
-        <div className="flex items-center justify-end gap-x-4 w-4/12">
+        <div className="flex items-center justify-end gap-x-4 w-5/12">
           <Label className="">Start of day :</Label>
           {/* <Input
             type="time"
@@ -224,12 +284,9 @@ function DayViewer({ day, index }: IDayViewer) {
             value={dayConfig?.startTime || ""}
             onChange={startTimeOnChange}
           /> */}
-          <TimePickerInternal
-            format={TIME_FORMAT}
+          <TimePickerInternal<Date>
             onChange={startTimeOnChange}
-            value={momentStartTime}
-            allowEmpty={false}
-            // className="text-primary bg-background"
+            value={dateFnsStartTime}
           />
         </div>
       </div>
@@ -250,6 +307,7 @@ function DayViewer({ day, index }: IDayViewer) {
                     key={plan.placeId}
                     timingConfig={timingConfig}
                     dragAndDropLoading={dragAndDropResult.isLoading}
+                    setActivity={setActivity}
                   />
                 ))}
               </div>

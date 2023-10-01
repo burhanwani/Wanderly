@@ -1,3 +1,4 @@
+import { logCacheDebug } from "../../config/logger/logger.config";
 import {
   REDIS_CACHE_EXPIRY_CONFIGURATION,
   RedisPrefix,
@@ -10,7 +11,7 @@ import {
 
 export const getDayFromCache = async (dayId: string) => {
   const data = await redisClient.get(`${RedisPrefix.DAY}${dayId}`);
-  console.log(`getDayFromCache by day Id ${dayId} : `, data);
+  logCacheDebug("Get Day", dayId, data);
   return dayModalSchemaV2.nullable().validateSync(data);
 };
 
@@ -20,7 +21,7 @@ export const putDayInCache = async (data: DayModalSchemaTypeV2) => {
     REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS,
     data
   );
-  console.log(`putDayInCache by ${data.dayId} :`, data);
+  logCacheDebug("Put Day", data?.dayId, data);
 };
 
 export const putDaysInCache = async (days: DayModalSchemaTypeV2[] = []) => {

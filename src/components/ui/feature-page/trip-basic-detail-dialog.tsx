@@ -109,9 +109,9 @@ export function TripBasicDetailsDialog(props: ITripBasicDetailsDialogProps) {
                           {...field}
                         />
                       </FormControl>
-                      <FormMessage />
                       {"  "}
                       days.
+                      <FormMessage />
                     </DialogDescription>
                   </FormItem>
                 )}

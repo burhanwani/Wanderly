@@ -1,11 +1,8 @@
 import { getServerSession } from "next-auth";
 import { ChatCompletionRequestMessage } from "openai-edge";
-import { ValidationError } from "yup";
-import { getPlaceDetail } from "../../../../../lib/backend/services/places.backend.services";
 import { nextAuthOptions } from "../../../../../lib/config/auth/next-auth.config";
-import { openAi } from "../../../../../lib/config/open-ai/open-ai.config";
+import { logError } from "../../../../../lib/config/logger/logger.config";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
-import { generateActivitiesRequestPayloadSchema } from "../../../../../lib/schema/generate-activities.schema";
 
 const getMessage = (location: string): ChatCompletionRequestMessage[] => {
   return [
@@ -44,43 +41,52 @@ For each response, provide an array of minimum 10 and maximum up to 15 activitie
 };
 
 export async function POST(request: Request) {
-  try {
-    const payload = await request.json();
-    let validatedPayload = null;
-    try {
-      validatedPayload =
-        generateActivitiesRequestPayloadSchema.validateSync(payload);
-    } catch (err) {
-      return RESPONSE_CONSTANTS[400]();
-    }
-    const session = await getServerSession(nextAuthOptions);
-    const userId = session?.user?.id;
-    if (!userId) {
-      return RESPONSE_CONSTANTS[401]();
-    }
-    const placeDetails = await getPlaceDetail(validatedPayload.placeId);
-    if (placeDetails?.status != "OK")
-      return RESPONSE_CONSTANTS[400]("Invalid Place ID");
-    console.log("placeDetails", placeDetails);
-    const messages = getMessage(placeDetails?.result?.name);
-    console.log("messages", messages);
-    const res = await openAi.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages,
-      temperature: 0.7,
-      user: userId,
-      stream: false,
-    });
-    console.log("res", res);
-    const response = await res.json();
-    console.log("response", JSON.stringify(response));
-    const activities = response?.choices[0]?.message?.content;
-    console.log("activities", JSON.parse(activities));
-    return RESPONSE_CONSTANTS[200]();
-  } catch (err) {
-    console.log("error", err);
-    if (err instanceof ValidationError)
-      return RESPONSE_CONSTANTS[400](err.message);
+  const session = await getServerSession(nextAuthOptions);
+  const userId = session?.user?.id;
+  if (!userId) {
+    logError("Unauthenticated v1 day generation");
+    return RESPONSE_CONSTANTS[401]();
   }
-  return RESPONSE_CONSTANTS[500]();
+  logError("v1 day generation", userId);
+  return RESPONSE_CONSTANTS[400]();
+  // try {
+  //   const payload = await request.json();
+  //   let validatedPayload = null;
+  //   try {
+  //     validatedPayload =
+  //       generateActivitiesRequestPayloadSchema.validateSync(payload);
+  //   } catch (err) {
+  //     logError("Wrong payload for day generation", userId);
+  //     return RESPONSE_CONSTANTS[400]();
+  //   }
+
+  //   const placeDetails = await getPlaceDetail(validatedPayload.placeId);
+  //   if (placeDetails?.status != "OK") {
+  //     logError("Wrong place Id for day generation", userId);
+  //     return RESPONSE_CONSTANTS[400]("Invalid Place ID");
+  //   }
+  //   const messages = getMessage(placeDetails?.result?.name);
+  //   const res = await openAi.createChatCompletion({
+  //     model: "gpt-3.5-turbo",
+  //     messages,
+  //     temperature: 0.7,
+  //     user: userId,
+  //     stream: false,
+  //   });
+  //   const response = await res.json();
+  //   const activities = response?.choices[0]?.message?.content;
+  //   return RESPONSE_CONSTANTS[200]();
+  // } catch (err) {
+  //   if (err instanceof ValidationError) {
+  //     logError(
+  //       `Day Generation Failed | Integration Validation Failed`,
+  //       userId,
+  //       err
+  //     );
+  //     return RESPONSE_CONSTANTS[400](err.message);
+  //   } else {
+  //     logError(`Something went wrong while generation day`, userId, err);
+  //   }
+  // }
+  // return RESPONSE_CONSTANTS[500]();
 }

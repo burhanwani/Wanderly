@@ -3,6 +3,7 @@ import { array } from "yup";
 import { NextDayGenerationSchemaType } from "../../../app/api/v2/trip/next/route";
 import { WanderlyVersion } from "../../config/app/app.config";
 import firebaseAdmin from "../../config/firebase/firebase-admin.config";
+import { logDevDebug } from "../../config/logger/logger.config";
 import { Collections } from "../../constants/firebase.constants";
 import {
   ChatGptTripBuilderModalSchemaType,
@@ -367,18 +368,16 @@ async function updateFirebaseTripV2(
         duration_details: distances?.[activityIndex],
       }) as ActivityModalSchemaTypeV2
   );
-  console.log("activitiesToAppend", activitiesToAppend);
   const dayToReturn = dayModalSchemaV2.validateSync({
     ...dayDetails,
     activities: activitiesToAppend,
     isDayGenerated: activities.length > 0,
   } as DayModalSchemaTypeV2);
-  console.log("dayToReturn", dayToReturn);
+  logDevDebug(`Update Next Day | Day ${payload.dayId}`, dayToReturn);
   const messageDetails = chatGptTripBuilderModalSchema.validateSync(builder);
   const promises = new Array<Promise<unknown>>();
   promises.push(updateBuilder(messageDetails));
   promises.push(updateDayFirebaseAndCache(dayToReturn, db, dayToReturn));
-  const data = await Promise.all(promises);
-  console.log("data", data);
+  await Promise.all(promises);
   return { dayDetail: dayToReturn, places };
 }

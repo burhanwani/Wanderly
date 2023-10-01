@@ -9,7 +9,6 @@ import { ThemeProvider } from "../providers/theme.provider";
 import { Header } from "@/components/layout/header";
 import NextAuthSessionProvider from "../providers/session.provider";
 import { Toaster } from "../components/ui/toaster";
-
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

@@ -1,5 +1,6 @@
 import { InferType, array } from "yup";
 import firebaseAdmin from "../../config/firebase/firebase-admin.config";
+import { logError, logInfo } from "../../config/logger/logger.config";
 import { Collections } from "../../constants/firebase.constants";
 import { RESPONSE_CONSTANTS } from "../../constants/response.constants";
 import {
@@ -25,9 +26,14 @@ export async function updateDayActivity(
   const day = await getDayFromFirebaseOrCache(validatedPayload.dayId, db);
   if (day) {
     if (day?.userId != userId) {
+      logError("Update Activity | Updating others activity", userId);
       return RESPONSE_CONSTANTS[401]();
     }
     if (day?.tripId != validatedPayload.tripId) {
+      logError(
+        `Update Activity | Updating others | trip id : ${validatedPayload.tripId}`,
+        userId
+      );
       return RESPONSE_CONSTANTS[401]();
     }
 
@@ -35,6 +41,10 @@ export async function updateDayActivity(
       await updateDayFirebaseAndCache(validatedPayload, db, {
         startTime: validatedPayload.startTime,
       });
+      logInfo(
+        `Update Activity | start time | day id : ${validatedPayload.dayId}`,
+        userId
+      );
       return RESPONSE_CONSTANTS[200](validatedPayload);
     }
     if (isActivitiesDraggedAndDropped(day, validatedPayload)) {
@@ -56,14 +66,26 @@ export async function updateDayActivity(
       await updateDayFirebaseAndCache(validatedPayload, db, {
         activities: validatedActivities,
       });
+      logInfo(
+        `Updated Activity | Drag and Drop | day id : ${validatedPayload.dayId}`,
+        userId
+      );
       return RESPONSE_CONSTANTS[200]({
         ...validatedPayload,
         activities: validatedActivities,
       });
     }
+    logInfo(
+      `Updated Activity | Others | day id : ${validatedPayload.dayId}`,
+      userId
+    );
     await updateDayFirebaseAndCache(validatedPayload, db, validatedPayload);
     return RESPONSE_CONSTANTS[200](validatedPayload);
   } else {
+    logError(
+      `Update Activity | Day Not Found | day Id : ${validatedPayload.dayId}`,
+      userId
+    );
     return RESPONSE_CONSTANTS[400]();
   }
 }

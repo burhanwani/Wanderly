@@ -12,6 +12,10 @@ const GeometryLocationSchema = yup.object().shape({
   lng: yup.number().default(0),
 });
 
+export type GeometryLocationSchemaType = InferType<
+  typeof GeometryLocationSchema
+>;
+
 const GeometryViewportSchema = yup.object().shape({
   northeast: GeometryLocationSchema.default({
     lat: 0,

@@ -1,4 +1,8 @@
 import axios, { AxiosResponse } from "axios";
+import {
+  logError,
+  logInfo,
+} from "../../../../../lib/config/logger/logger.config";
 import { GoogleEndPoints } from "../../../../../lib/constants/google.constants";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
 import { GooglePlacesAutocompleteResponseSchemaType } from "../../../../../lib/schema/prediction.schema";
@@ -21,9 +25,12 @@ const getSuggestionsFromServer = async (search: string) => {
       string,
       AxiosResponse<GooglePlacesAutocompleteResponseSchemaType>
     >(url);
+    logInfo(`Place Auto Complete | Successful ${search}`, "Public");
     if (response?.data?.status == "OK") {
       return response?.data?.predictions || [];
     }
-  } catch (err) {}
+  } catch (err) {
+    logError(`Place Auto Complete | Successful ${search}`, "Public", err);
+  }
   return [];
 };

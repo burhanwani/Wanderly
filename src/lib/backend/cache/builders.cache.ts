@@ -1,3 +1,4 @@
+import { logCacheDebug } from "../../config/logger/logger.config";
 import {
   REDIS_CACHE_EXPIRY_CONFIGURATION,
   RedisPrefix,
@@ -10,8 +11,8 @@ import {
 
 export const getBuilderFromCache = async (tripId: string) => {
   const data = await redisClient.get(`${RedisPrefix.BUILDER}${tripId}`);
-  console.log(`getBuilderFromCache ${tripId}`, data);
   try {
+    logCacheDebug("Get Builder", tripId, data);
     return chatGptTripBuilderModalSchema.validateSync(data);
   } catch (err) {
     return null;
@@ -27,6 +28,6 @@ export const putBuilderInCache = async (
       REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS,
       builder
     );
-    console.log(`putPlaceInCache ${builder.tripId}`, builder);
+    logCacheDebug("Put Builder", builder.tripId, builder);
   }
 };

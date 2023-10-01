@@ -17,7 +17,6 @@ export async function getBuilder(tripId: string) {
     .collection(Collections.BUILDERS)
     .doc(tripId)
     .get();
-  console.log("builderDoc", builderDoc);
   if (!builderDoc.exists) {
     return null;
   }

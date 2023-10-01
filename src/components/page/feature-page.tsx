@@ -1,20 +1,21 @@
 import { useParams } from "next/navigation";
-import { useMemo, useCallback, useState, useEffect } from "react";
+import {
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+  createRef,
+  SetStateAction,
+} from "react";
 import AuthChecker from "../layout/auth";
 import { Card } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
 import { Main } from "../layout/main";
 import ConciergeGoogleMap from "../ui/google-maps";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { DropResult, ResponderProvided } from "react-beautiful-dnd";
 import DayViewer from "../ui/feature-page/day-viewer";
-import {
-  TypographyH1,
-  TypographyH2,
-  TypographyH3,
-  TypographyMuted,
-  TypographyP,
-} from "../ui/typography";
+import { TypographyH1, TypographyH3 } from "../ui/typography";
 import { Separator } from "../ui/separator";
 import { useAppSelector } from "../../redux/hooks";
 import { useGetTripQuery } from "../../redux/services/trips.services";
@@ -22,8 +23,17 @@ import { tripIdParamSchema } from "../../lib/schema/trip.schema";
 import { ConciergePlayer } from "../ui/player";
 import { MAP_LOADING_ANIMATION } from "../../lib/config/ui/loaders.ui.config";
 import ActivityLoader from "../ui/feature-page/activity-loader";
+import { sendGAEvent } from "../../lib/config/google-analytics/google-analytics.config";
+import { useSession } from "next-auth/react";
+import { ActivityModalSchemaTypeV2 } from "../../lib/schema/day.v2.schema";
+import { ActivityViewer } from "../ui/feature-page/activity-viewer";
+
+export type MarkerClickRef = {
+  onMarkerClick: null | ((activity: ActivityModalSchemaTypeV2) => {});
+};
 
 export default function MainFeaturePage() {
+  const session = useSession();
   const params = useParams();
   const tripId = useMemo(() => {
     try {
@@ -55,16 +65,29 @@ export default function MainFeaturePage() {
   );
 
   const setCurrentDayOnClick = useCallback(
-    (day: string) => setCurrentDay(() => day),
-    []
+    (day: string) => {
+      sendGAEvent(
+        "Main_Feature_Page_Day_Changed",
+        "Day Changed by user in Main page",
+        tripEntity?.placeName,
+        session?.data?.user?.id
+      );
+      setCurrentDay(() => day);
+    },
+    [session?.data?.user?.id, tripEntity?.placeName]
   );
 
   useEffect(() => {
-    if (tripEntity?.days?.[0] && isSuccess) {
+    if (isSuccess && tripEntity?.days?.[0]) {
       setCurrentDay(() => tripEntity?.days?.[0] || "");
     }
-  }, [isSuccess, tripEntity?.days]);
-
+    if (isSuccess && tripEntity) {
+      sendGAEvent("Main_Feature_Page_Loaded", "Main page opened");
+    }
+  }, [isSuccess, tripEntity, tripEntity?.days]);
+  const [activity, setActivity] = useState<ActivityModalSchemaTypeV2 | null>(
+    null
+  );
   return (
     <AuthChecker>
       <Main className="items-start gap-y-2">
@@ -78,20 +101,16 @@ export default function MainFeaturePage() {
                     {tripEntity?.days?.length || 0 > 1 ? "days" : "day"} Trip to{" "}
                     {tripEntity?.placeName}
                   </TypographyH3>
-                  {/* <TypographyMuted>{tripPlace?.result?.name}</TypographyMuted> */}
                 </div>
                 <div className="flex gap-x-4  w-full mt-4">
                   <Tabs
                     defaultValue={currentDay}
                     defaultChecked={true}
                     className="w-full"
-                    activationMode="manual"
+                    onValueChange={(newValue) => setCurrentDayOnClick(newValue)}
                   >
-                    <TabsList className="w-full">
+                    <TabsList className="w-full" defaultValue={currentDay}>
                       <div className="flex overflow-x-scroll md:overflow-x-auto w-full scroll-p-5 h-full my-4">
-                        {/* <TabsTrigger value="tripOverview">
-                          Trip Overview
-                        </TabsTrigger> */}
                         {tripEntity?.days?.map((day, index) => (
                           <TabsTrigger
                             value={day}
@@ -103,65 +122,29 @@ export default function MainFeaturePage() {
                         ))}
                       </div>
                     </TabsList>
-                    {/* <TabsContent
-                      value="tripOverview"
-                      className="flex flex-col gap-y-4"
-                    >
-                      <DetailViewer
-                        heading="Overview"
-                        detail={tripDetails?.summary?.overview || "-"}
-                      />
-
-                      <DetailViewer
-                        heading="Tips"
-                        detail={tripDetails?.summary?.tips || "-"}
-                      />
-
-                      <DetailViewer
-                        heading="Accommodation"
-                        detail={tripDetails?.summary?.accommodation || "-"}
-                      />
-
-                      <DetailViewer
-                        heading="Getting there"
-                        detail={tripDetails?.summary?.gettingThere || "-"}
-                      />
-
-                      <div>
-                        That&apos;s it! Enjoy your trip to{" "}
-                        {tripDetails?.placeDetails?.result?.name}!
-                      </div>
-                    </TabsContent> */}
                     {tripEntity?.days?.map((day, index) => (
-                      <DayViewer day={day} key={day} index={index} />
+                      <DayViewer
+                        day={day}
+                        key={day}
+                        index={index}
+                        setActivity={setActivity}
+                      />
                     ))}
                   </Tabs>
                 </div>
               </div>
-              {/* {tripEntity && (
-                <div className="flex w-full md:w-4/12 max-h-[85vh]">
-                  <Separator
-                    orientation="vertical"
-                    className="hidden md:block"
-                  />
-                  <TripChat
-                    id={tripEntity.tripId}
-                    initialMessages={tripDetails?.messages}
-                    tripDetails={tripDetails}
-                    setTripDetails={setTripDetails}
-                  />
-                </div>
-              )} */}
               <div className="flex w-full md:w-4/12 ">
                 <Separator orientation="vertical" className="hidden md:block" />
-                {tripEntity && (
+                {tripEntity && currentDay != "" && (
                   <ConciergeGoogleMap
                     initialPosition={position}
                     currentDay={currentDay}
                     className="rounded-lg rounded-l-none w-full border-border"
+                    setActivity={setActivity}
                   />
                 )}
               </div>
+              <ActivityViewer activity={activity} setActivity={setActivity} />
             </Card>
           </>
         )}

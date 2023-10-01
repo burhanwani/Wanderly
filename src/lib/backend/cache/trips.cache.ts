@@ -1,4 +1,5 @@
 import { array } from "yup";
+import { logCacheDebug } from "../../config/logger/logger.config";
 import {
   REDIS_CACHE_EXPIRY_CONFIGURATION,
   RedisPrefix,
@@ -14,9 +15,10 @@ export const getTripsFromCache = async (userId: string) => {
       0,
       -1
     );
-    console.log(`getTripFromCache by user Id ${userId} : `, data);
+    logCacheDebug("Get Trips", userId, data);
     return array().of(tripModalSchema).nullable().validateSync(data);
   }
+  logCacheDebug("Get Trips", userId, null);
   return null;
 };
 
@@ -30,14 +32,18 @@ export const putTripsInCache = async (
     `${RedisPrefix.TRIP}${userId}`,
     REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS
   );
-  console.log(`putTripInCache by ${userId} :`, data);
+  logCacheDebug("Put Trips", userId, data);
 };
 
 export const getTripsLengthInCache = async (userId: string) => {
   const exists = await redisClient.exists(`${RedisPrefix.TRIP}${userId}`);
+  logCacheDebug("Exists Trips", userId, exists);
   if (exists) {
-    return await redisClient.llen(`${RedisPrefix.TRIP}${userId}`);
+    const length = await redisClient.llen(`${RedisPrefix.TRIP}${userId}`);
+    logCacheDebug("Check Length Trips", userId, length);
+    return length;
   }
+  logCacheDebug("Check Length Trips", userId, null);
   return null;
 };
 
@@ -54,4 +60,5 @@ end
 return nil
 `;
   await redisClient.eval(luaScript, [`${RedisPrefix.TRIP}${userId}`], [tripId]);
+  logCacheDebug("Remove Length Trips", userId, null);
 };
