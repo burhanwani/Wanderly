@@ -1,23 +1,13 @@
 import {
-  Calendar,
   Clock,
   CreditCard,
   FileScan,
   LocateIcon,
-  PlusIcon,
   Star,
   XIcon,
 } from "lucide-react";
 import { Button } from "../button";
-import { DayModalSchemaType } from "../../../lib/schema/day.schema";
 import { Dispatch, SetStateAction, useMemo, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../card";
 import { ActivityModalSchemaTypeV2 } from "../../../lib/schema/day.v2.schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../dialog";
 import {
@@ -27,13 +17,12 @@ import {
   TooltipTrigger,
 } from "../tooltip";
 import { buildGooglePhotoApi } from "../../../lib/constants/google.constants";
-import { TypographyP, TypographyH4, TypographyRegular } from "../typography";
+import { TypographyH4, TypographyRegular } from "../typography";
 import Image from "next/image";
 import { useAppSelector } from "../../../redux/hooks";
 import { ONE_MILLISECOND_IN_SECOND } from "./day-viewer";
 import humanizeDuration from "humanize-duration";
 import { cn } from "../../../lib/utils/ui.utils";
-import Loader from "../loader";
 interface IActivityViewer {
   activity: ActivityModalSchemaTypeV2 | null;
   setActivity: Dispatch<SetStateAction<ActivityModalSchemaTypeV2 | null>>;
@@ -93,39 +82,45 @@ export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
               </TooltipProvider>
               {place?.result?.formatted_address}
             </div>
-            <div className="flex gap-x-2">
-              <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <FileScan className="h-5 w-5" />{" "}
-                  </TooltipTrigger>
-                  <TooltipContent>Booking</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              Booking {activity?.booking as string}
-            </div>
-            <div className="flex gap-x-2">
-              <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <CreditCard className="h-5 w-5" />{" "}
-                  </TooltipTrigger>
-                  <TooltipContent>Budget</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              {activity?.budget as string}
-            </div>
-            <div className="flex gap-x-2">
-              <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Star className="h-5 w-5" />{" "}
-                  </TooltipTrigger>
-                  <TooltipContent>Popularity</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              {activity?.popularity as string}
-            </div>
+            {(activity?.booking as string) && (
+              <div className="flex gap-x-2">
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <FileScan className="h-5 w-5" />{" "}
+                    </TooltipTrigger>
+                    <TooltipContent>Booking</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                Booking {activity?.booking as string}
+              </div>
+            )}
+            {(activity?.budget as string) && (
+              <div className="flex gap-x-2">
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <CreditCard className="h-5 w-5" />{" "}
+                    </TooltipTrigger>
+                    <TooltipContent>Budget</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                {activity?.budget as string}
+              </div>
+            )}
+            {(activity?.popularity as string) && (
+              <div className="flex gap-x-2">
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Star className="h-5 w-5" />{" "}
+                    </TooltipTrigger>
+                    <TooltipContent>Popularity</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                {activity?.popularity as string}
+              </div>
+            )}
             <div className="flex flex-wrap items-center  tracking-tight gap-x-2">
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
@@ -138,20 +133,26 @@ export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
               ~ {allocatedTimeEstimateFormatted} avg
             </div>
 
-            <TypographyRegular className="mt-6">
-              <TypographyH4>Description</TypographyH4>
-              {activity?.description as string}
-            </TypographyRegular>
+            {(activity?.description as string) && (
+              <TypographyRegular className="mt-6">
+                <TypographyH4>Description</TypographyH4>
+                {activity?.description as string}
+              </TypographyRegular>
+            )}
 
-            <TypographyRegular className="mt-6">
-              <TypographyH4>Why we recommended it</TypographyH4>
-              {activity?.reasoning as string}
-            </TypographyRegular>
+            {(activity?.reasoning as string) && (
+              <TypographyRegular className="mt-6">
+                <TypographyH4>Why we recommended it</TypographyH4>
+                {activity?.reasoning as string}
+              </TypographyRegular>
+            )}
 
-            <TypographyRegular className="mt-6">
-              <TypographyH4>Tips</TypographyH4>
-              {activity?.tips as string}
-            </TypographyRegular>
+            {(activity?.tips as string) && (
+              <TypographyRegular className="mt-6">
+                <TypographyH4>Tips</TypographyH4>
+                {activity?.tips as string}
+              </TypographyRegular>
+            )}
           </div>
           {images.length > 0 && (
             <div className="hidden xl:flex w-full xl:flex-col h-full items-center justify-evenly">
