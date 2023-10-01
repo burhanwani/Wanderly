@@ -253,9 +253,6 @@ async function createFirebaseTripV2(
   messages: ChatCompletionRequestMessage[],
   totalDays: number = 1
 ) {
-  const allDays = Object.keys(days)
-    .sort()
-    .map((dayNumber) => days[dayNumber]);
   const db = firebaseAdmin.firestore();
   const tripRef = db.collection(Collections.TRIPS).doc();
   const daysRef = await Promise.all(
@@ -263,8 +260,7 @@ async function createFirebaseTripV2(
       db.collection(Collections.DAYS).doc()
     )
   );
-  console.log("daysRef", daysRef);
-  console.log("days", days);
+
   const daysDetails = daysRef.map((day, dayIndex) => {
     const dayNumber = dayIndex + 1;
     const activities = days[dayNumber]
@@ -277,7 +273,11 @@ async function createFirebaseTripV2(
             }) as ActivityModalSchemaTypeV2
         )
       : [];
-    console.log(`activities ${dayNumber}`, activities);
+
+    logDevDebug(
+      `Generate Day 1 | for user ${userId} | activities : `,
+      activities
+    );
     const dayToReturn = dayModalSchemaV2.validateSync({
       activities,
       tripId: tripRef.id,
@@ -329,7 +329,6 @@ export async function updateNextDayOfTripV2(
   builder: ChatGptTripBuilderModalSchemaType
 ) {
   const activities = days?.[payload?.dayNumber];
-  console.log("activities", activities);
   const places = await getPlaceDetailsFromTextParallel(
     activities.map((activity) => activity.google_place_name),
     tripDetails?.tripDetails?.placeName

@@ -34,13 +34,12 @@ export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
   );
   const [currentImage, setCurrentImage] = useState<number>(0);
   const images = useMemo(() => {
-    console.log("activity", activity, place);
     return (place?.result?.photos || [])
       ?.filter((image) => image.width > image?.height)
       .map((image) => {
         return buildGooglePhotoApi(500, 250, image.photo_reference);
       });
-  }, [activity, place]);
+  }, [place]);
 
   const allocatedTimeEstimateFormatted = useMemo(() => {
     const allocatedTimeInMilliseconds =
