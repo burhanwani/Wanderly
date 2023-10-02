@@ -75,8 +75,13 @@ export function DayItineraryViewer({
 
   const [showDistanceLoading, setShowDistanceLoading] =
     useState<boolean>(false);
+  const inputOnClickHandler: React.MouseEventHandler<HTMLInputElement> =
+    useCallback((e) => {
+      e.stopPropagation();
+    }, []);
   const inputChangeHandler = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
+      e.stopPropagation();
       const { value = 1 } = e?.target || 1;
       const seconds = hoursToSeconds(value);
       if (day && seconds != null) {
@@ -180,6 +185,7 @@ export function DayItineraryViewer({
                                 step=".01"
                                 value={timingConfig?.[index]?.allocatedHour}
                                 onChange={inputChangeHandler}
+                                onClick={inputOnClickHandler}
                               />{" "}
                               hrs
                             </div>
