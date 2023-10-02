@@ -20,13 +20,37 @@ import { Skeleton } from "../ui/skeleton";
 import { ROUTES_CONSTANTS } from "../../lib/constants/routes.constants";
 import { useRouter } from "next/navigation";
 import { AUTH_SIGN_OPTION } from "../../lib/constants/auth.constants";
+import { sendGAEvent } from "../../lib/config/google-analytics/google-analytics.config";
 
 const HeaderRightContent = () => {
   return (
     <div className={"flex gap-x-2"}>
-      <AuthenticationFlow />
+      <FeedbackFlow />
       <ThemeSetter />
+      <AuthenticationFlow />
     </div>
+  );
+};
+
+const FeedbackFlow = () => {
+  "use client";
+  const router = useRouter();
+  const { data: session } = useSession();
+  return (
+    <Button
+      variant={"outline"}
+      onClick={() => {
+        sendGAEvent(
+          "Feedback",
+          "User clicked on Feedback button",
+          "User clicked on Feedback button",
+          session?.user?.id
+        );
+        router.push(ROUTES_CONSTANTS.feedback);
+      }}
+    >
+      Feedback
+    </Button>
   );
 };
 
@@ -55,18 +79,32 @@ const AuthenticationFlow = () => {
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => router.push(ROUTES_CONSTANTS.trips)}
+            onClick={() => {
+              sendGAEvent(
+                "My_Trips",
+                "All trips page for user",
+                "Load all trip",
+                session?.user?.id
+              );
+              router.push(ROUTES_CONSTANTS.trips);
+            }}
             className="cursor-pointer"
           >
             My Trips
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() =>
+            onClick={() => {
+              sendGAEvent(
+                "Sign_Out",
+                "User signed out",
+                "User signed out",
+                session?.user?.id
+              );
               signOut({
                 callbackUrl: ROUTES_CONSTANTS.home,
                 redirect: true,
-              })
-            }
+              });
+            }}
             className="cursor-pointer"
           >
             Logout

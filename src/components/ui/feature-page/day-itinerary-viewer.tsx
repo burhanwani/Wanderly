@@ -1,26 +1,37 @@
+import { Trash, Calendar, Clock, Map, CarFront } from "lucide-react";
 import {
-  Trash,
-  Calendar,
-  Clock,
-  Footprints,
-  Map,
-  PlusIcon,
-} from "lucide-react";
-import { useCallback, ChangeEvent, useMemo } from "react";
-import { Draggable } from "react-beautiful-dnd";
+  useCallback,
+  ChangeEvent,
+  useMemo,
+  useState,
+  Dispatch,
+  SetStateAction,
+} from "react";
+import { Draggable } from "@hello-pangea/dnd";
 import { Button } from "../button";
 import { Card, CardHeader, CardTitle, CardContent } from "../card";
 import { Separator } from "../separator";
 import { Input } from "../input";
 import { TypographyP } from "../typography";
-import { DayModalSchemaType } from "../../../lib/schema/day.schema";
 import { useAppSelector } from "../../../redux/hooks";
 import { useUpdateActivityMutation } from "../../../redux/services/days.services";
 import { number } from "yup";
+import Image from "next/image";
+import { buildGooglePhotoApi } from "../../../lib/constants/google.constants";
+import {
+  ActivityModalSchemaTypeV2,
+  DayModalSchemaTypeV2,
+} from "../../../lib/schema/day.v2.schema";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../tooltip";
 
 interface IDayItineraryViewer {
-  day: DayModalSchemaType;
-  plan: DayModalSchemaType["activities"][0];
+  day: DayModalSchemaTypeV2;
+  plan: DayModalSchemaTypeV2["activities"][0];
   index: number;
   timingConfig: {
     [key: string]: {
@@ -33,6 +44,8 @@ interface IDayItineraryViewer {
       travelTimeFormatted: string;
     };
   };
+  dragAndDropLoading: boolean;
+  setActivity: Dispatch<SetStateAction<ActivityModalSchemaTypeV2 | null>>;
 }
 
 function hoursToSeconds(hours: unknown) {
@@ -48,13 +61,27 @@ export function DayItineraryViewer({
   plan,
   index,
   timingConfig,
+  dragAndDropLoading,
+  setActivity,
 }: IDayItineraryViewer) {
   const place = useAppSelector(
-    (state) => state.google.places.entities[plan?.placeId]
+    (state) => state.google.places.entities[plan?.placeId!]
   );
+  const nextPlace = useAppSelector((state) => {
+    const nextPlan = day?.activities?.[index + 1];
+    return state.google.places.entities[nextPlan?.placeId!] || null;
+  });
   const [updateActivity] = useUpdateActivityMutation();
+
+  const [showDistanceLoading, setShowDistanceLoading] =
+    useState<boolean>(false);
+  const inputOnClickHandler: React.MouseEventHandler<HTMLInputElement> =
+    useCallback((e) => {
+      e.stopPropagation();
+    }, []);
   const inputChangeHandler = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
+      e.stopPropagation();
       const { value = 1 } = e?.target || 1;
       const seconds = hoursToSeconds(value);
       if (day && seconds != null) {
@@ -63,113 +90,158 @@ export function DayItineraryViewer({
           activities: day.activities.map((_plan) => {
             const newPlan = { ..._plan };
             if (_plan.placeId == plan.placeId) {
-              newPlan.allocatedTime = seconds;
+              newPlan.duration_seconds = seconds;
             }
             return newPlan;
           }),
         };
-        updateActivity(dayToUpdate);
+        updateActivity(dayToUpdate)
+          .unwrap()
+          .finally(() => setShowDistanceLoading(() => false));
       }
     },
     [day, plan.placeId, updateActivity]
   );
-  // const onDelete = useCallback((_plan) => {
-  //   const dayToUpdate = {
-  //     ...day,
-  //     activities: day.activities.map((_plan) => {
-  //       const newPlan = { ..._plan };
-  //       if (_plan.placeId == plan.placeId) {
-  //         newPlan.allocatedTime = seconds;
-  //       }
-  //       return newPlan;
-  //     }),
-  //   };
-  //   updateActivity(dayToUpdate);
-  // }, []);
-  const imageUrl = useMemo(
-    () => place?.result?.photos?.[0]?.photo_reference,
-    [place?.result?.photos]
+  const onDelete = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      const dayToUpdate = {
+        ...day,
+        activities: day.activities
+          .filter((_plan, _index) => {
+            return _plan.placeId != plan.placeId;
+          })
+          .map((_plan) => ({ ..._plan })),
+      };
+      updateActivity(dayToUpdate)
+        .unwrap()
+        .finally(() => setShowDistanceLoading(() => false));
+    },
+    [day, plan.placeId, updateActivity]
   );
+  const imageUrl = useMemo(() => {
+    if ((place?.result?.photos || []).length > 0) {
+      let photoReference = place?.result?.photos?.[0]?.photo_reference;
+      const photo = place?.result?.photos?.find(
+        (_photo) => _photo.width > _photo?.height
+      );
+      if (photo != undefined) photoReference = photo?.photo_reference;
+      return buildGooglePhotoApi(448, 250, photoReference);
+    }
+    return null;
+  }, [place?.result?.photos]);
+
   return (
     <>
-      <Draggable key={plan.placeId} draggableId={plan.placeId} index={index}>
-        {(provided) => {
+      <Draggable key={plan.placeId} draggableId={plan?.placeId!} index={index}>
+        {(provided, snapshot) => {
           return (
-            <div
-              ref={provided.innerRef}
-              {...provided.draggableProps}
-              {...provided.dragHandleProps}
-            >
-              <Card className="group hover:border-primary hover:border-2 hover:border-dashed">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="">{plan.name}</div>
-                    <Button
-                      size={"icon"}
-                      variant={"destructive"}
-                      className="group-hover:opacity-100 opacity-0 ease-in transition-opacity duration-100"
-                      onClick={() => {}}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </CardTitle>
-                  <CardContent className="text-sm text-muted-foreground flex flex-col p-0">
-                    <div className="flex gap-x-2">
-                      <Calendar className="h-5 w-5" />{" "}
-                      {timingConfig?.[index]?.startTime} -{" "}
-                      {timingConfig?.[index]?.endTime}
-                    </div>
-                    <div className="flex flex-wrap items-center  tracking-tight gap-x-2">
-                      <Clock className="h-5 w-5" /> Allocated Time (~{" "}
-                      {timingConfig?.[index]?.allocatedTimeEstimateFormatted}{" "}
-                      avg):{" "}
-                      <Input
-                        name="itinerary.allocatedTime"
-                        type="number"
-                        className="w-16 mx-2"
-                        min={0}
-                        max={23}
-                        value={timingConfig?.[index]?.allocatedHour}
-                        onChange={inputChangeHandler}
-                      />{" "}
-                      hrs
-                    </div>
-                    <TypographyP className="!mt-4">
-                      {plan?.description}
+            <>
+              <div
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+              >
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card
+                        className="group flex justify-between hover:border-primary hover:border-2 hover:border-dashed"
+                        onClick={() => setActivity(plan)}
+                      >
+                        <CardHeader className="w-full">
+                          <CardTitle className="flex items-center justify-between">
+                            <div className="">
+                              {(plan?.name as string) || ""}
+                            </div>
+                            <Button
+                              size={"icon"}
+                              variant={"destructive"}
+                              className="group-hover:opacity-100 opacity-0 ease-in transition-opacity duration-100"
+                              onClick={onDelete}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </CardTitle>
+                          <CardContent className="text-sm text-muted-foreground flex flex-col p-0">
+                            <div className="flex gap-x-2">
+                              <Calendar className="h-5 w-5" />{" "}
+                              {timingConfig?.[index]?.startTime} -{" "}
+                              {timingConfig?.[index]?.endTime}
+                            </div>
+                            <div className="flex flex-wrap items-center  tracking-tight gap-x-2">
+                              <Clock className="h-5 w-5" /> Allocated Time (~{" "}
+                              {
+                                timingConfig?.[index]
+                                  ?.allocatedTimeEstimateFormatted
+                              }{" "}
+                              avg):{" "}
+                              <Input
+                                name="itinerary.allocatedTime"
+                                type="number"
+                                className="w-20 mx-2"
+                                min={0}
+                                max={23}
+                                step=".01"
+                                value={timingConfig?.[index]?.allocatedHour}
+                                onChange={inputChangeHandler}
+                                onClick={inputOnClickHandler}
+                              />{" "}
+                              hrs
+                            </div>
+                            <TypographyP className="!mt-4">
+                              {plan?.description as string}
+                            </TypographyP>
+                          </CardContent>
+                        </CardHeader>
+                        {imageUrl && (
+                          <div className="hidden xl:block min-h-[8rem] max-h-full">
+                            <Image
+                              className="rounded-r-xl max-w-md bg-cover max-h-full h-full min-h-[8rem]"
+                              src={imageUrl}
+                              alt={place?.result?.name || "Place Image"}
+                              width={300}
+                              height={120}
+                            />
+                          </div>
+                        )}
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Click for more info or Drag and drop to move activities
+                      around
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              {day?.activities?.length - 1 != index &&
+                snapshot.isDragging == false && (
+                  <div className="flex w-full items-center justify-center gap-x-2 h-5">
+                    <CarFront className="h-5 w-5" />~{" "}
+                    <TypographyP className="mr-2 !mt-0">
+                      {showDistanceLoading || dragAndDropLoading
+                        ? "Calculating..."
+                        : timingConfig?.[index]?.travelTimeFormatted}
                     </TypographyP>
-                  </CardContent>
-                </CardHeader>
-                {/* {imageUrl && (
-                  <div>
-                    <Image
-                      src={`https://maps.googleapis.com/maps/api/place/photoimageUrl?maxWidth=400&photoreference=${imageUrl}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY}`}
-                      alt="Image"
-                      width={400}
-                      height={100}
-                    />
+                    <Separator orientation="vertical" className="bg-primary" />
+                    <Button
+                      variant={"link"}
+                      onClick={() =>
+                        window.open(
+                          `https://www.google.com/maps/dir/?api=1&origin=${place?.result?.formatted_address}&destination=${nextPlace?.result?.formatted_address}`,
+                          "_blank"
+                        )
+                      }
+                    >
+                      <Map className="h-5 w-5 mr-2" />
+                      Direction
+                    </Button>
                   </div>
-                )} */}
-              </Card>
-            </div>
+                )}
+            </>
           );
         }}
       </Draggable>
-      <div className="flex w-full items-center justify-center gap-x-2 h-5">
-        <Footprints className="h-5 w-5" />~{" "}
-        <TypographyP className="mr-2 !mt-0">
-          {timingConfig?.[index]?.travelTimeFormatted}
-        </TypographyP>
-        <Separator orientation="vertical" className="bg-primary" />
-        <Button variant={"link"}>
-          <Map className="h-5 w-5 mr-2" />
-          Direction
-        </Button>
-      </div>
-      {/* <div className="flex flex-row items-center justify-center w-full"> */}
-      {/* <Button variant={"ghost"} className="flex gap-x-2">
-        <PlusIcon className="h-5 w-5" /> Add Activity
-      </Button> */}
-      {/* </div> */}
     </>
   );
 }

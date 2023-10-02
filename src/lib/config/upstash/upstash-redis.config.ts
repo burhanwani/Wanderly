@@ -6,9 +6,15 @@ export enum RedisPrefix {
   PLACE = "place:",
   TRIP = "trip:",
   DAY = "day:",
+  DISTANCE = "distance:",
+  PLACE_TEXT = "placeFromText:",
+  BUILDER = "builder:",
 }
 
-export const REDIS_CACHE_EXPIRY_CONFIGURATION = { TEN_MINUTES_IN_SECONDS: 600 };
+export const REDIS_CACHE_EXPIRY_CONFIGURATION = {
+  TEN_MINUTES_IN_SECONDS: 600,
+  ONE_HOUR_IN_SECONDS: 3600,
+};
 
 export const rateLimit = {
   googlePrediction: new Ratelimit({

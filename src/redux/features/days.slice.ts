@@ -5,28 +5,22 @@ import {
   createSlice,
 } from "@reduxjs/toolkit";
 import { DayModalSchemaType } from "../../lib/schema/day.schema";
+import { DayModalSchemaTypeV2 } from "../../lib/schema/day.v2.schema";
 
-const daysAdapter = createEntityAdapter<DayModalSchemaType>({
-  selectId: (day: DayModalSchemaType) => day.dayId,
+const daysAdapter = createEntityAdapter<DayModalSchemaTypeV2>({
+  selectId: (day: DayModalSchemaTypeV2) => day.dayId,
 });
 
 const daysSlice = createSlice({
   name: "days",
   initialState: daysAdapter.getInitialState(),
   reducers: {
-    upsertMany(state, action: PayloadAction<DayModalSchemaType[]>) {
+    upsertMany(state, action: PayloadAction<DayModalSchemaTypeV2[]>) {
       daysAdapter.upsertMany(state, action.payload);
     },
-    upsertOne(state, action: PayloadAction<DayModalSchemaType>) {
+    upsertOne(state, action: PayloadAction<DayModalSchemaTypeV2>) {
       daysAdapter.upsertOne(state, action.payload);
     },
-    updateStartTime(
-      state,
-      action: PayloadAction<{
-        dayId: DayModalSchemaType["dayId"];
-        startTime: DayModalSchemaType["startTime"];
-      }>
-    ) {},
   },
 });
 

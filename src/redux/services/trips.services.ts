@@ -2,8 +2,10 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "../../lib/config/axios/basequery.endpoint.config";
 import { API_ROUTES_CONSTANTS } from "../../lib/constants/routes.constants";
 
+import { NextDayGenerationSchemaType } from "../../app/api/v2/trip/next/route";
+import { UpdateNextDayOfTripV2Type } from "../../lib/backend/services/trips.backend.services";
 import { TripBasicDetailsDialogForm } from "../../lib/schema/city-builder-form.schema";
-import { DayModalSchemaType } from "../../lib/schema/day.schema";
+import { DayModalSchemaTypeV2 } from "../../lib/schema/day.v2.schema";
 import { GooglePlaceDetailResponseType } from "../../lib/schema/place-details.schema";
 import { TripModalSchemaType } from "../../lib/schema/trip.schema";
 import daysSlice from "../features/days.slice";
@@ -40,16 +42,46 @@ const tripApi = createApi({
             ] // an error occurred, but we still want to refetch this query when `{ type: 'Trip', id: 'LIST' }` is invalidated
           : [{ type: "Trip", id: "LIST" }],
     }),
-    createTrip: builder.mutation<
+    // createTrip: builder.mutation<
+    //   {
+    //     tripDetails: TripModalSchemaType;
+    //     dayDetails: DayModalSchemaType[];
+    //     places: GooglePlaceDetailResponseType[];
+    //   },
+    //   TripBasicDetailsDialogForm
+    // >({
+    //   query: (data) => ({
+    //     url: API_ROUTES_CONSTANTS.createTrip,
+    //     method: "POST",
+    //     data,
+    //   }),
+    //   async onQueryStarted(_queryParam, { dispatch, queryFulfilled }) {
+    //     try {
+    //       const data = await queryFulfilled;
+    //       if (data?.data) {
+    //         dispatch(
+    //           tripsSlice.actions.upsertOne(data?.data?.tripDetails || [])
+    //         );
+    //         dispatch(
+    //           daysSlice.actions.upsertMany(data?.data?.dayDetails || [])
+    //         );
+    //         dispatch(
+    //           googleSlice.actions.upsertManyPlaces(data?.data?.places || [])
+    //         );
+    //       }
+    //     } catch (err) {}
+    //   },
+    // }),
+    createTripV2: builder.mutation<
       {
         tripDetails: TripModalSchemaType;
-        dayDetails: DayModalSchemaType[];
+        dayDetails: DayModalSchemaTypeV2[];
         places: GooglePlaceDetailResponseType[];
       },
       TripBasicDetailsDialogForm
     >({
       query: (data) => ({
-        url: API_ROUTES_CONSTANTS.createTrip,
+        url: API_ROUTES_CONSTANTS.createTripV2,
         method: "POST",
         data,
       }),
@@ -70,10 +102,31 @@ const tripApi = createApi({
         } catch (err) {}
       },
     }),
+    updateTripV2: builder.mutation<
+      UpdateNextDayOfTripV2Type,
+      NextDayGenerationSchemaType
+    >({
+      query: (data) => ({
+        url: API_ROUTES_CONSTANTS.nextDayGenerationTrip,
+        method: "POST",
+        data,
+      }),
+      async onQueryStarted(_queryParam, { dispatch, queryFulfilled }) {
+        try {
+          const data = await queryFulfilled;
+          if (data?.data) {
+            dispatch(daysSlice.actions.upsertOne(data?.data?.dayDetail || []));
+            dispatch(
+              googleSlice.actions.upsertManyPlaces(data?.data?.places || [])
+            );
+          }
+        } catch (err) {}
+      },
+    }),
     getTrip: builder.query<
       {
         tripDetails: TripModalSchemaType;
-        daysDetails: DayModalSchemaType[];
+        daysDetails: DayModalSchemaTypeV2[];
         places: GooglePlaceDetailResponseType[];
       },
       string
@@ -108,9 +161,11 @@ const tripApi = createApi({
 // auto-generated based on the defined endpoints
 export const {
   useLazyGetTripsQuery,
-  useCreateTripMutation,
+  // useCreateTripMutation,
+  useCreateTripV2Mutation,
   useLazyGetTripQuery,
   useGetTripQuery,
+  useUpdateTripV2Mutation,
 } = tripApi;
 
 export default tripApi;

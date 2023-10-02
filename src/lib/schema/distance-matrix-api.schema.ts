@@ -34,7 +34,7 @@ export const distanceMatrixResponseSchema = object().shape({
   destination_addresses: array().of(string()).optional(),
   origin_addresses: array().of(string()).optional(),
   rows: array().of(rowSchema).optional(),
-  status: string().required(),
+  status: string().optional(),
 });
 
 export type DistanceMatrixResponseSchemaType = InferType<

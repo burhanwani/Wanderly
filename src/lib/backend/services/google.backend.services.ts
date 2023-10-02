@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from "axios";
+import { logDevDebug, logError } from "../../config/logger/logger.config";
 import { GoogleEndPoints } from "../../constants/google.constants";
 import {
   DistanceMatrixResponseSchemaType,
@@ -11,6 +12,11 @@ import {
 } from "../../schema/place-from-text.schema";
 import { GooglePlacesAutocompleteResponseSchemaType } from "../../schema/prediction.schema";
 import { generateGoogleUrl } from "../../utils/google-places.utils";
+import {
+  buildDistanceCacheKey,
+  getDistanceFromCache,
+  putDistanceInCache,
+} from "../cache/distance.cache";
 import { getPlaceDetail } from "./places.backend.services";
 
 export const getLocationDetailsByPlaceId = async (
@@ -23,15 +29,16 @@ export const getLocationDetailsByPlaceId = async (
     string,
     AxiosResponse<GooglePlaceDetailResponseType>
   >(url);
+  logDevDebug("Place Details Google", response);
   return response;
 };
 
-export const getPlaceDetailWithImage = async (
+export const getPlaceDetailFromText = async (
   place: string = "",
   region: string = ""
 ): Promise<GooglePlaceDetailResponseType> => {
   const url = generateGoogleUrl(GoogleEndPoints.FIND_PLACE_FROM_TEXT, {
-    input: place,
+    input: place + ", " + region,
     inputtype: "textquery",
     fields: "place_id",
     locationbias: `region:${region}`,
@@ -40,23 +47,31 @@ export const getPlaceDetailWithImage = async (
     string,
     AxiosResponse<GooglePlaceFromTextSchemaType>
   >(url);
-  console.log("response?.data", response?.data);
   const validatedResponse = googlePlaceFromTextSchema.validateSync(
     response?.data
   );
-  console.log("validatedResponse", validatedResponse);
+  logDevDebug(
+    `Place From Text Details Google | Payload: ${place + ", " + region} | `,
+    validatedResponse
+  );
   const placeDetails = await getPlaceDetail(
     validatedResponse?.candidates?.[0]?.place_id
   );
   return placeDetails;
 };
 
-export const getPlaceDetailsWithImageParallel = async (
+export const getPlaceDetailsFromTextParallel = async (
   placeNames: string[] = [],
   region: string = ""
 ): Promise<GooglePlaceDetailResponseType[]> => {
   return await Promise.all(
-    placeNames?.map(async (name) => getPlaceDetailWithImage(name, region))
+    placeNames?.map(async (name) => getPlaceDetailFromText(name, region))
+  );
+};
+
+export const getPlaceDetailsParallel = async (placeIds: string[] = []) => {
+  return await Promise.all(
+    placeIds?.map(async (placeId) => getPlaceDetail(placeId))
   );
 };
 
@@ -65,10 +80,14 @@ export const getDistanceMatrixBetweenPlaces = async (
   nextPlace: GooglePlaceDetailResponseType
 ): Promise<DistanceMatrixResponseSchemaType | null> => {
   try {
-    const url = generateGoogleUrl(GoogleEndPoints.DISTANCE_MATRIX, {
+    const payload = {
       origins: `${place?.result?.geometry?.location?.lat},${place?.result?.geometry?.location?.lng}`,
       destinations: `${nextPlace?.result?.geometry?.location?.lat},${nextPlace?.result?.geometry?.location?.lng}`,
-    });
+    };
+    const url = generateGoogleUrl(GoogleEndPoints.DISTANCE_MATRIX, payload);
+    const distanceCacheKey = buildDistanceCacheKey(place, nextPlace);
+    const distanceResponse = await getDistanceFromCache(distanceCacheKey);
+    if (distanceResponse) return distanceResponse;
     const response = await axios.get<
       string,
       AxiosResponse<DistanceMatrixResponseSchemaType>
@@ -77,9 +96,10 @@ export const getDistanceMatrixBetweenPlaces = async (
     const validatedResponse = distanceMatrixResponseSchema.validateSync(
       response?.data
     );
+    await putDistanceInCache(distanceCacheKey, validatedResponse);
     return validatedResponse;
   } catch (err) {
-    console.log("error", err);
+    logError("Google Distance Failed", "authenticated", err);
     return null;
   }
 };

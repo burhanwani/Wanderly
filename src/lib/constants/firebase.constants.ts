@@ -10,6 +10,7 @@ export enum Collections {
   TRIPS = "trips",
   DAYS = "days",
   BUILDERS = "builders",
+  LOCATIONS = "locations",
 }
 
 export enum TripWith {

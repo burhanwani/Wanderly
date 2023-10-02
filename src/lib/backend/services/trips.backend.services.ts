@@ -1,6 +1,9 @@
 import { ChatCompletionRequestMessage } from "openai-edge";
 import { array } from "yup";
+import { NextDayGenerationSchemaType } from "../../../app/api/v2/trip/next/route";
+import { WanderlyVersion } from "../../config/app/app.config";
 import firebaseAdmin from "../../config/firebase/firebase-admin.config";
+import { logDevDebug } from "../../config/logger/logger.config";
 import { Collections } from "../../constants/firebase.constants";
 import {
   ChatGptTripBuilderModalSchemaType,
@@ -12,11 +15,20 @@ import {
   dayModalSchema,
 } from "../../schema/day.schema";
 import {
+  ActivityModalSchemaTypeV2,
+  DayModalSchemaTypeV2,
+  dayModalSchemaV2,
+} from "../../schema/day.v2.schema";
+import {
   DistanceMatrixResponseSchemaType,
   distanceSchema,
   durationSchema,
 } from "../../schema/distance-matrix-api.schema";
 import { ChatGptTripItineraryResponseType } from "../../schema/open-ai.schema";
+import {
+  ChatGptTripGeneratorMultipleSchemaV2Type,
+  ChatGptTripItineraryResponseTypeV2,
+} from "../../schema/open-ai.v2.schema";
 import { GooglePlaceDetailResponseType } from "../../schema/place-details.schema";
 import { TripModalSchemaType, tripModalSchema } from "../../schema/trip.schema";
 import {
@@ -24,11 +36,15 @@ import {
   getTripsLengthInCache,
   putTripsInCache,
 } from "../cache/trips.cache";
+import { createBuilder, updateBuilder } from "./builders.backend.services";
+import { updateDayFirebaseAndCache } from "./days.backend.services";
 import {
   getDistanceMatrixBetweenPlacesParallel,
-  getPlaceDetailsWithImageParallel,
+  getPlaceDetailsFromTextParallel,
 } from "./google.backend.services";
 import { getPlaceDetail } from "./places.backend.services";
+
+export type GetTripReturnType = Awaited<ReturnType<typeof getTrip>>;
 
 export async function getTrip(tripId: string, userId: string) {
   const db = firebaseAdmin.firestore();
@@ -45,10 +61,11 @@ export async function getTrip(tripId: string, userId: string) {
     .where("tripId", "==", tripId)
     .get();
   const daysDetails =
-    daysDoc?.docs?.map((day) => dayModalSchema.validateSync(day.data())) || [];
+    daysDoc?.docs?.map((day) => dayModalSchemaV2.validateSync(day.data())) ||
+    [];
   const allPlaces =
     Object.values(daysDetails)
-      ?.map((day) => day?.activities?.map((activity) => activity.placeId))
+      ?.map((day) => day?.activities?.map((activity) => activity?.placeId!))
       .flat() || [];
   allPlaces.push(tripDetails?.placeId);
   const placesPromise = allPlaces.map((place) => getPlaceDetail(place));
@@ -84,7 +101,7 @@ export async function createTrip(
   const allDays = Object.values(days);
   const places = await Promise.all(
     allDays.map((activities) =>
-      getPlaceDetailsWithImageParallel(
+      getPlaceDetailsFromTextParallel(
         activities.map((activity) => activity.google_place_name),
         placeDetails?.result?.name
       )
@@ -162,6 +179,7 @@ async function createFirebaseTrip(
       lat: placeDetails?.result?.geometry?.location?.lat,
       lng: placeDetails?.result?.geometry?.location?.lng,
     },
+    version: WanderlyVersion.V1,
     // photoReference: placeDetails?.result?.photos?.[0]?.photo_reference,
   } as TripModalSchemaType);
   const messageDetails = chatGptTripBuilderModalSchema.validateSync({
@@ -188,4 +206,177 @@ export async function getTripsLength(userId: string) {
   if (length) return length;
   const trips = await getTrips(userId);
   return trips?.length || 0;
+}
+
+export async function createTripV2(
+  days: ChatGptTripItineraryResponseTypeV2,
+  userId: string,
+  placeDetails: GooglePlaceDetailResponseType,
+  messages: ChatCompletionRequestMessage[],
+  totalDays: number = 1
+) {
+  const allDays = Object.values(days);
+  const places = await Promise.all(
+    allDays.map((activities) =>
+      getPlaceDetailsFromTextParallel(
+        activities.map((activity) => activity.google_place_name),
+        placeDetails?.result?.name
+      )
+    )
+  );
+  const distances = await Promise.all(
+    places.map((days) => getDistanceMatrixBetweenPlacesParallel(days))
+  );
+
+  const { daysDetails, tripDetails } = await createFirebaseTripV2(
+    days,
+    userId,
+    placeDetails,
+    places,
+    distances,
+    messages,
+    totalDays
+  );
+  return {
+    tripDetails,
+    daysDetails,
+    places: places.flat(),
+  };
+}
+
+async function createFirebaseTripV2(
+  days: ChatGptTripItineraryResponseTypeV2,
+  userId: string,
+  placeDetails: GooglePlaceDetailResponseType,
+  places: GooglePlaceDetailResponseType[][],
+  distances: (DistanceMatrixResponseSchemaType | null)[][],
+  messages: ChatCompletionRequestMessage[],
+  totalDays: number = 1
+) {
+  const db = firebaseAdmin.firestore();
+  const tripRef = db.collection(Collections.TRIPS).doc();
+  const daysRef = await Promise.all(
+    Array.from({ length: totalDays }, () =>
+      db.collection(Collections.DAYS).doc()
+    )
+  );
+
+  const daysDetails = daysRef.map((day, dayIndex) => {
+    const dayNumber = dayIndex + 1;
+    const activities = days[dayNumber]
+      ? days[dayNumber]?.map(
+          (activity, activityIndex) =>
+            ({
+              ...activity,
+              placeId: places?.[dayIndex]?.[activityIndex]?.result?.place_id,
+              duration_details: distances?.[dayIndex]?.[activityIndex],
+            }) as ActivityModalSchemaTypeV2
+        )
+      : [];
+
+    logDevDebug(
+      `Generate Day 1 | for user ${userId} | activities : `,
+      activities
+    );
+    const dayToReturn = dayModalSchemaV2.validateSync({
+      activities,
+      tripId: tripRef.id,
+      userId,
+      dayId: day.id,
+      isDayGenerated: activities.length > 0,
+    } as DayModalSchemaTypeV2);
+    return dayToReturn;
+  });
+
+  const tripDetails = tripModalSchema.validateSync({
+    days: daysRef.map((day) => day.id),
+    placeId: placeDetails?.result?.place_id,
+    userId,
+    tripId: tripRef?.id,
+    placeName: placeDetails?.result?.name,
+    location: {
+      lat: placeDetails?.result?.geometry?.location?.lat,
+      lng: placeDetails?.result?.geometry?.location?.lng,
+    },
+    version: WanderlyVersion.V2,
+    // photoReference: placeDetails?.result?.photos?.[0]?.photo_reference,
+  } as TripModalSchemaType);
+
+  const messageDetails = chatGptTripBuilderModalSchema.validateSync({
+    messages,
+    tripId: tripRef?.id,
+    userId,
+  } as ChatGptTripBuilderModalSchemaType);
+  const promises = new Array<Promise<unknown>>();
+  promises.push(tripRef.create(tripDetails));
+  promises.push(createBuilder(messageDetails));
+
+  daysDetails.forEach((day, index) =>
+    promises.push(daysRef[index].create(day))
+  );
+  await Promise.all(promises);
+  return { tripDetails, daysDetails };
+}
+
+export type UpdateNextDayOfTripV2Type = Awaited<
+  ReturnType<typeof updateNextDayOfTripV2>
+>;
+
+export async function updateNextDayOfTripV2(
+  days: ChatGptTripItineraryResponseTypeV2,
+  tripDetails: GetTripReturnType,
+  payload: NextDayGenerationSchemaType,
+  builder: ChatGptTripBuilderModalSchemaType
+) {
+  const activities = days?.[payload?.dayNumber];
+  const places = await getPlaceDetailsFromTextParallel(
+    activities.map((activity) => activity.google_place_name),
+    tripDetails?.tripDetails?.placeName
+  );
+
+  const distances = await getDistanceMatrixBetweenPlacesParallel(places);
+  return updateFirebaseTripV2(
+    activities,
+    tripDetails,
+    payload,
+    places,
+    distances,
+    builder
+  );
+}
+
+async function updateFirebaseTripV2(
+  activities: ChatGptTripGeneratorMultipleSchemaV2Type,
+  tripDetails: GetTripReturnType,
+  payload: NextDayGenerationSchemaType,
+  places: GooglePlaceDetailResponseType[],
+  distances: (DistanceMatrixResponseSchemaType | null)[],
+  builder: ChatGptTripBuilderModalSchemaType
+) {
+  const db = firebaseAdmin.firestore();
+  const dayDetails = tripDetails?.daysDetails?.find(
+    (day) => day.dayId == payload.dayId
+  );
+  if (!dayDetails) throw new Error("Day not found");
+
+  const activitiesToAppend = activities?.map(
+    (activity, activityIndex) =>
+      ({
+        ...activity,
+        placeId: places?.[activityIndex]?.result?.place_id,
+        duration_details: distances?.[activityIndex],
+      }) as ActivityModalSchemaTypeV2
+  );
+  const dayToReturn = dayModalSchemaV2.validateSync({
+    ...dayDetails,
+    activities: activitiesToAppend,
+    isDayGenerated: activities.length > 0,
+  } as DayModalSchemaTypeV2);
+  logDevDebug(`Update Next Day | Day ${payload.dayId}`, dayToReturn);
+  const messageDetails = chatGptTripBuilderModalSchema.validateSync(builder);
+  const promises = new Array<Promise<unknown>>();
+  promises.push(updateBuilder(messageDetails));
+  promises.push(updateDayFirebaseAndCache(dayToReturn, db, dayToReturn));
+  await Promise.all(promises);
+  return { dayDetail: dayToReturn, places };
 }

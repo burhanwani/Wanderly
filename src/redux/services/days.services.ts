@@ -2,7 +2,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "../../lib/config/axios/basequery.endpoint.config";
 import { API_ROUTES_CONSTANTS } from "../../lib/constants/routes.constants";
 
-import { DayModalSchemaType } from "../../lib/schema/day.schema";
+import { DayModalSchemaTypeV2 } from "../../lib/schema/day.v2.schema";
 import daysSlice from "../features/days.slice";
 import { RootState } from "../store";
 
@@ -12,7 +12,10 @@ const daysApi = createApi({
   baseQuery: axiosBaseQuery(),
   tagTypes: ["Days"],
   endpoints: (builder) => ({
-    updateActivity: builder.mutation<DayModalSchemaType, DayModalSchemaType>({
+    updateActivity: builder.mutation<
+      DayModalSchemaTypeV2,
+      DayModalSchemaTypeV2
+    >({
       query: (data) => ({
         url: API_ROUTES_CONSTANTS.updateActivity,
         method: "post",
@@ -27,7 +30,10 @@ const daysApi = createApi({
           state?.days?.entities?.[_queryParam?.dayId || ""] || null;
         dispatch(daysSlice.actions.upsertOne(_queryParam));
         try {
-          await queryFulfilled;
+          const data = await queryFulfilled;
+          if (data?.data) {
+            dispatch(daysSlice.actions.upsertOne(data?.data));
+          }
         } catch (err) {
           if (oldState) {
             dispatch(daysSlice.actions.upsertOne(oldState));

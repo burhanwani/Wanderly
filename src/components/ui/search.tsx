@@ -10,15 +10,13 @@ import { cn } from "../../lib/utils/ui.utils";
 import { useSession, signIn } from "next-auth/react";
 import { AUTH_SIGN_OPTION } from "../../lib/constants/auth.constants";
 import { useToast } from "./use-toast";
-import { Skeleton } from "./skeleton";
-import { ToastAction } from "@radix-ui/react-toast";
 import { useLazyGetPredictionsQuery } from "../../redux/services/google.services";
-
 import { selectTripsEntities } from "../../redux/features/days.slice";
 import { useAppSelector } from "../../redux/hooks";
 import { TypographyH4 } from "./typography";
 import { GooglePlacesAutocompleteResponseSchemaType } from "../../lib/schema/prediction.schema";
-
+import { isAdminUser } from "../../lib/config/app/app.config";
+import { sendGAEvent } from "../../lib/config/google-analytics/google-analytics.config";
 const AutocompleteInput = () => {
   const router = useRouter();
   const session = useSession();
@@ -31,9 +29,10 @@ const AutocompleteInput = () => {
   const [suggestionsList, setSuggestionsList] = useState<
     GooglePlacesAutocompleteResponseSchemaType["predictions"]
   >([]);
-  const { toast } = useToast();
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [fetchPredictions] = useLazyGetPredictionsQuery();
+  // const [fetchGenerateActivities] = useLazyGenerateActivitiesQuery();
   // Function to handle input value change
   const handleChange = useCallback(
     (event: React.FormEvent<HTMLElement>, { newValue }: ChangeEvent) => {
@@ -76,14 +75,25 @@ const AutocompleteInput = () => {
     ) => {
       if (session.status == "authenticated") {
         router.push(ROUTES_CONSTANTS.cityBuilder(suggestion.place_id));
+        sendGAEvent(
+          "Home_Place_Search",
+          "Search for place",
+          suggestion.description,
+          session?.data?.user?.id
+        );
       } else {
+        sendGAEvent(
+          "Home_Place_Search",
+          "Search for place",
+          suggestion.description
+        );
         signIn(AUTH_SIGN_OPTION.DEFAULT, {
           redirect: true,
           callbackUrl: ROUTES_CONSTANTS.cityBuilder(suggestion.place_id),
         });
       }
     },
-    [router, session.status]
+    [router, session?.data?.user?.id, session.status]
   );
 
   // Input properties for Autosuggest component
@@ -138,7 +148,11 @@ const AutocompleteInput = () => {
     []
   );
 
-  if (session.status == "authenticated" && trips.length > 2) {
+  if (
+    session.status == "authenticated" &&
+    trips.length > 2 &&
+    !isAdminUser(session)
+  ) {
     return <TypographyH4>Only 3 trips are allowed in beta</TypographyH4>;
   }
   return (

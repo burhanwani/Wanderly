@@ -4,6 +4,7 @@ import appConfigSlice from "./features/auth.slice";
 import daysSlice from "./features/days.slice";
 import googleSlice from "./features/google.slice";
 import tripsSlice from "./features/trips.slice";
+import activitiesApi from "./services/activities.services";
 import daysApi from "./services/days.services";
 import googleApi from "./services/google.services";
 import tripApi from "./services/trips.services";
@@ -20,6 +21,7 @@ export const combinedReducer = combineReducers({
   [tripApi.reducerPath]: tripApi.reducer,
   [googleApi.reducerPath]: googleApi.reducer,
   [daysApi.reducerPath]: daysApi.reducer,
+  [activitiesApi.reducerPath]: activitiesApi.reducer,
 });
 
 export const rootReducer: Reducer<RootState> = (state, action) => {
@@ -36,7 +38,8 @@ export const store = configureStore({
     getDefaultMiddleware()
       .concat(tripApi.middleware)
       .concat(googleApi.middleware)
-      .concat(daysApi.middleware),
+      .concat(daysApi.middleware)
+      .concat(activitiesApi.middleware),
 });
 
 setupListeners(store.dispatch);

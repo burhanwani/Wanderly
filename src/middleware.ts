@@ -19,7 +19,7 @@ const rateLimitMiddleware = async (req: NextRequest) => {
     await rateLimit.googlePrediction.limit(ip);
   if (!success) {
     if (req?.nextUrl?.pathname.startsWith("/api"))
-      return RESPONSE_CONSTANTS[429];
+      return RESPONSE_CONSTANTS[429]();
     return NextResponse.redirect(ROUTES_CONSTANTS.rateLimit);
   }
   const requestHeaders = new Headers(req.headers);

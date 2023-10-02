@@ -2,14 +2,9 @@ import { FirestoreAdapter } from "@next-auth/firebase-adapter";
 import { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { ROUTES_CONSTANTS } from "../../constants/routes.constants";
+import { isAdminUser } from "../app/app.config";
 import firebaseAdmin from "../firebase/firebase-admin.config";
-
-const emailWhiteList = [
-  "manojcchoudhary@gmail.com",
-  "himanilgole@gmail.com",
-  "shek.m.aamir@gmail.com",
-  "burhan.ayub@gmail.com",
-];
+import { logInfo } from "../logger/logger.config";
 
 export const nextAuthOptions: AuthOptions = {
   providers: [
@@ -21,19 +16,14 @@ export const nextAuthOptions: AuthOptions = {
   adapter: FirestoreAdapter(firebaseAdmin.firestore()),
   callbacks: {
     async signIn(params) {
-      const isWhiteListed = emailWhiteList.includes(params?.user?.email || "");
-      if (isWhiteListed) {
-        return true;
-      } else {
-        // Return false to display a default error message
-        // return false;
-        // Or you can return a URL to redirect to:
-        return "/unauthorized";
-      }
+      logInfo("User Login", params?.user?.id);
+      return true;
     },
     async session(param) {
       const { session, user } = param;
-      session.user = user;
+      const isAdmin = isAdminUser(user.email);
+      logInfo("User Session Loaded", user?.id);
+      session.user = { ...user, isAdmin };
       return session;
     },
   },

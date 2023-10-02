@@ -1,22 +1,12 @@
 import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { ChatCompletionRequestMessage } from "openai-edge";
-import { InferType, ValidationError } from "yup";
-import { getPlaceDetail } from "../../../../../lib/backend/services/places.backend.services";
-import {
-  createTrip,
-  getTripsLength,
-} from "../../../../../lib/backend/services/trips.backend.services";
-import {
-  BETA_LIMIT_EMAIL_WHITE_LIST,
-  isBetaLimitReached,
-} from "../../../../../lib/config/app/app.config";
+import { InferType } from "yup";
 import { nextAuthOptions } from "../../../../../lib/config/auth/next-auth.config";
-import { openAi } from "../../../../../lib/config/open-ai/open-ai.config";
+import { logError } from "../../../../../lib/config/logger/logger.config";
 import { TripWith } from "../../../../../lib/constants/firebase.constants";
 import { RESPONSE_CONSTANTS } from "../../../../../lib/constants/response.constants";
 import { cityBuilderModalSchema } from "../../../../../lib/schema/city-builder-form.schema";
-import { chatGptTripItineraryResponseSchema } from "../../../../../lib/schema/open-ai.schema";
 
 const getUserInput = (data: cityBuilderFormType) => {
   const days = `Please generate itinerary for ${data?.days} days`;
@@ -66,51 +56,51 @@ type cityBuilderFormType = InferType<typeof cityBuilderModalSchema>;
 export async function POST(req: NextRequest) {
   const session = await getServerSession(nextAuthOptions);
   const userId = session?.user?.id;
-  if (!userId) return RESPONSE_CONSTANTS[401];
-  const json = await req.json();
-  try {
-    const data = await cityBuilderModalSchema.validate(json);
-    const placeDetails = await getPlaceDetail(data?.placeId);
-    const length = await getTripsLength(userId);
-    if (
-      isBetaLimitReached(length) &&
-      !BETA_LIMIT_EMAIL_WHITE_LIST.includes(session?.user?.email)
-    ) {
-      return RESPONSE_CONSTANTS[401]("Only 3 trips are allowed in beta");
-    }
-    if (placeDetails?.status != "OK")
-      return NextResponse.json(
-        { messages: "Invalid Place ID" },
-        { status: 400 }
-      );
-
-    const messages = getMessage(placeDetails?.result?.name, data);
-    const res = await openAi.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages,
-      temperature: 0.7,
-      user: userId,
-      stream: false,
-    });
-    const daysResponse = await res.json();
-    console.log("daysResponse", daysResponse);
-    const days = daysResponse?.choices[0]?.message?.content;
-    const parsedDays = JSON.parse(days);
-    console.log("parsedDays", parsedDays);
-    const validatedDays =
-      chatGptTripItineraryResponseSchema.validateSync(parsedDays);
-    console.log("validatedDays", validatedDays);
-    const trip = await createTrip(
-      validatedDays,
-      userId,
-      placeDetails,
-      messages
-    );
-    return RESPONSE_CONSTANTS[200](trip);
-  } catch (err) {
-    console.log("error", err);
-    if (err instanceof ValidationError)
-      return RESPONSE_CONSTANTS[400](err.message);
+  if (!userId) {
+    return RESPONSE_CONSTANTS[401]();
   }
-  return RESPONSE_CONSTANTS[500];
+  logError("v1 trip generation", userId);
+  return RESPONSE_CONSTANTS[405]();
+  // const session = await getServerSession(nextAuthOptions);
+  // const userId = session?.user?.id;
+  // if (!userId) return RESPONSE_CONSTANTS[401]();
+  // const json = await req.json();
+  // try {
+  //   const data = await cityBuilderModalSchema.validate(json);
+  //   const placeDetails = await getPlaceDetail(data?.placeId);
+  //   const length = await getTripsLength(userId);
+  //   if (isBetaLimitReached(length) && !isAdminUser(session?.user?.email)) {
+  //     return RESPONSE_CONSTANTS[401]("Only 3 trips are allowed in beta");
+  //   }
+  //   if (placeDetails?.status != "OK")
+  //     return RESPONSE_CONSTANTS[400]("Invalid Place ID");
+
+  //   const messages = getMessage(placeDetails?.result?.name, data);
+  //   const res = await openAi.createChatCompletion({
+  //     model: "gpt-3.5-turbo",
+  //     messages,
+  //     temperature: 0.7,
+  //     user: userId,
+  //     stream: false,
+  //   });
+  //   const daysResponse = await res.json();
+
+  //   const days = daysResponse?.choices[0]?.message?.content;
+  //   const parsedDays = JSON.parse(days);
+
+  //   const validatedDays =
+  //     chatGptTripItineraryResponseSchema.validateSync(parsedDays);
+
+  //   const trip = await createTrip(
+  //     validatedDays,
+  //     userId,
+  //     placeDetails,
+  //     messages
+  //   );
+  //   return RESPONSE_CONSTANTS[200](trip);
+  // } catch (err) {
+  //   if (err instanceof ValidationError)
+  //     return RESPONSE_CONSTANTS[400](err.message);
+  // }
+  // return RESPONSE_CONSTANTS[500]();
 }
