@@ -15,7 +15,7 @@ const predictionsAdapter = createEntityAdapter<
   GooglePlacesAutocompleteResponseSchemaType["predictions"][0]
 >({
   selectId: (
-    place: GooglePlacesAutocompleteResponseSchemaType["predictions"][0]
+    place: GooglePlacesAutocompleteResponseSchemaType["predictions"][0],
   ) => place?.place_id,
 });
 
@@ -31,13 +31,13 @@ const googleSlice = createSlice({
   reducers: {
     upsertManyPlaces(
       state,
-      action: PayloadAction<GooglePlaceDetailResponseType[]>
+      action: PayloadAction<GooglePlaceDetailResponseType[]>,
     ) {
       placesAdapter.upsertMany(state.places, action.payload);
     },
     upsertOnePlace(
       state,
-      action: PayloadAction<GooglePlaceDetailResponseType>
+      action: PayloadAction<GooglePlaceDetailResponseType>,
     ) {
       placesAdapter.upsertOne(state.places, action.payload);
     },
@@ -45,7 +45,7 @@ const googleSlice = createSlice({
       state,
       action: PayloadAction<
         GooglePlacesAutocompleteResponseSchemaType["predictions"]
-      >
+      >,
     ) {
       predictionsAdapter.upsertMany(state.predictions, action.payload);
     },
@@ -57,7 +57,7 @@ export const selectPlacesEntities = (state: RootState) =>
 
 export const selectPlaceById = (
   state: RootState,
-  id: GooglePlaceDetailResponseType["result"]["place_id"] | undefined
+  id: GooglePlaceDetailResponseType["result"]["place_id"] | undefined,
 ) => (typeof id == "number" ? state.google.places.entities[id] : null);
 
 export const selectPredictionEntities = (state: RootState) =>
@@ -65,6 +65,6 @@ export const selectPredictionEntities = (state: RootState) =>
 
 export const selectPredictionById = (
   state: RootState,
-  id: GooglePlacesAutocompleteResponseSchemaType["predictions"][0]["place_id"]
+  id: GooglePlacesAutocompleteResponseSchemaType["predictions"][0]["place_id"],
 ) => (typeof id == "number" ? state.google.predictions.entities[id] : null);
 export default googleSlice;

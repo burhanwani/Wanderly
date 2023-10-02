@@ -41,7 +41,7 @@ export default function RootLayout({
       <body
         className={cn(
           inter.className,
-          "h-screen overflow-y-auto overflow-x-hidden"
+          "h-screen overflow-y-auto overflow-x-hidden",
         )}
       >
         <NextAuthSessionProvider>

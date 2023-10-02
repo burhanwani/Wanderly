@@ -13,7 +13,7 @@ export const sendGAEvent = (
   category: string,
   action: string,
   label?: string | undefined,
-  value?: number | undefined
+  value?: number | undefined,
 ) => {
   ReactGA.event({
     category,

@@ -11,7 +11,7 @@ export const buildGooglePhotoApi = (
   maxWidth = 400,
   maxHeight = 100,
   photoReference = "",
-  apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY
+  apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY,
 ) => {
   return (
     GoogleEndPoints.IMAGE +

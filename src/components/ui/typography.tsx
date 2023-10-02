@@ -11,7 +11,7 @@ export function TypographyH1({ children, className }: ITypography) {
     <h1
       className={cn(
         "scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl",
-        className
+        className,
       )}
     >
       {children}
@@ -24,7 +24,7 @@ export function TypographyH2({ children, className }: ITypography) {
     <h2
       className={cn(
         "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0",
-        className
+        className,
       )}
     >
       {children}
@@ -37,7 +37,7 @@ export function TypographyH3({ children, className }: ITypography) {
     <h3
       className={cn(
         "scroll-m-20 text-2xl font-semibold tracking-tight",
-        className
+        className,
       )}
     >
       {children}
@@ -50,7 +50,7 @@ export function TypographyH4({ children, className }: ITypography) {
     <h4
       className={cn(
         "scroll-m-20 text-xl font-semibold tracking-tight",
-        className
+        className,
       )}
     >
       {children}
@@ -86,7 +86,7 @@ export function TypographyInlineCode({ children, className }: ITypography) {
     <code
       className={cn(
         "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
-        className
+        className,
       )}
     >
       {children}

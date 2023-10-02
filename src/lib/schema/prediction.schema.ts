@@ -7,7 +7,7 @@ const StructuredFormattingSchema = object().shape({
       object().shape({
         length: number().default(0),
         offset: number().default(0),
-      })
+      }),
     )
     .default([]),
   secondary_text: string().default(""),
@@ -27,7 +27,7 @@ const PredictionSchema = object().shape({
       object().shape({
         length: number().default(0),
         offset: number().default(0),
-      })
+      }),
     )
     .default([]),
   place_id: string().default(""),

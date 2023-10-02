@@ -39,7 +39,7 @@ import { chatGptTripItineraryResponseSchemaV2 } from "../../../../../lib/schema/
 
 const getMultiDayItinerary = (
   location: string,
-  data: cityBuilderFormType
+  data: cityBuilderFormType,
 ) => `Create a JSON response for ${data?.days} days trip itinerary in ${location}. Ensure a diverse range of activities, catering to various interests and preferences, over a span of several days. Include tourist attractions, hidden gems, dining options, cultural experiences, and outdoor adventures.
 
 For each response, provide a JSON object with day numbers as keys and arrays of activity objects. Each day should include one breakfast, one lunch, and one dinner activity, along with one additional activity during a particular time of day. Each activity object should include a "time_of_day" field to categorize it as morning, noon, or evening. Use Google Place Names where available.
@@ -203,7 +203,7 @@ json
 const getPerDayItinerary = (
   location: string,
   data: cityBuilderFormType,
-  removeAdditionInformation = false
+  removeAdditionInformation = false,
 ) => {
   const additionalInformation = removeAdditionInformation
     ? ""
@@ -279,7 +279,7 @@ json
 const getPerDayItineraryOptimized = (
   location: string,
   data: cityBuilderFormType,
-  removeAdditionInformation = false
+  removeAdditionInformation = false,
 ) => `Craft a 1-day of ${
   data.days
 } day ${location} trip itinerary in JSON. Include diverse activities: tourist spots, hidden gems, meals, cultural experiences, and outdoor adventures. For each activity, specify the time of day (morning, noon, evening), Google Place Name, estimated duration in seconds, and other relevant details.
@@ -336,7 +336,7 @@ Replace placeholders (e.g., [Breakfast]) with actual values.`;
 
 const getMessage = (
   location: string,
-  data: cityBuilderFormType
+  data: cityBuilderFormType,
 ): ChatCompletionRequestMessage[] => {
   //   const userInput = getUserInput(data);
   const prompt = getPerDayItinerary(location, data);
@@ -370,7 +370,7 @@ export async function POST(req: NextRequest) {
     if (placeDetails?.status != "OK") {
       logError(
         `v2 day generation | Invalid Place Id : ${data?.placeId}`,
-        userId
+        userId,
       );
       return RESPONSE_CONSTANTS[400]("Invalid Place ID");
     }
@@ -390,7 +390,7 @@ export async function POST(req: NextRequest) {
       chatGptTripItineraryResponseSchemaV2.validateSync(parsedDays);
     logDevDebug(
       "v2 day generation | ChatGpt Parsed & Validated Response",
-      validatedDays
+      validatedDays,
     );
     if (daysResponse?.choices[0]?.message)
       messages.push(daysResponse?.choices[0]?.message);
@@ -399,7 +399,7 @@ export async function POST(req: NextRequest) {
       userId,
       placeDetails,
       messages,
-      data.days
+      data.days,
     );
     console.timeEnd(`Create trip for ${userId}`);
     return RESPONSE_CONSTANTS[200](trip);

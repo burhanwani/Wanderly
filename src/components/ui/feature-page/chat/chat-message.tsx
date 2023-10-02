@@ -8,11 +8,6 @@ import { TypographyP } from "../../typography";
 import { CodeBlock } from "../../code-block";
 import { ChatMessageActions } from "./chat-message-actions";
 import React from "react";
-import {
-  CodeComponent,
-  ReactMarkdownNames,
-  SpecialComponents,
-} from "react-markdown/lib/ast-to-react";
 
 export interface ChatMessageProps {
   message: Message;
@@ -75,7 +70,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
         {message.role === "user" ? <User /> : <BrainCircuit />}
       </div>
       <div className="ml-4 flex-1 space-y-2 px-1">
-        <MemoizedReactMarkdown
+        {/* <MemoizedReactMarkdown
           className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0"
           remarkPlugins={[remarkGfm, remarkMath]}
           components={{
@@ -113,7 +108,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
           }}
         >
           {message.content}
-        </MemoizedReactMarkdown>
+        </MemoizedReactMarkdown> */}
         {/* <ChatMessageActions message={message} /> */}
       </div>
     </div>

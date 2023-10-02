@@ -27,7 +27,7 @@ const getUserInput = (data: cityBuilderFormType) => {
 
 const getMessage = (
   location: string,
-  data: cityBuilderFormType
+  data: cityBuilderFormType,
 ): ChatCompletionRequestMessage[] => {
   const userInput = getUserInput(data);
   return [

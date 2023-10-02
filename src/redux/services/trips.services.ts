@@ -36,7 +36,7 @@ const tripApi = createApi({
         result // successful query
           ? [
               ...((result || [])?.map(
-                ({ tripId }) => ({ type: "Trip", id: tripId }) as const
+                ({ tripId }) => ({ type: "Trip", id: tripId }) as const,
               ) || []),
               { type: "Trip", id: "LIST" },
             ] // an error occurred, but we still want to refetch this query when `{ type: 'Trip', id: 'LIST' }` is invalidated
@@ -90,13 +90,13 @@ const tripApi = createApi({
           const data = await queryFulfilled;
           if (data?.data) {
             dispatch(
-              tripsSlice.actions.upsertOne(data?.data?.tripDetails || [])
+              tripsSlice.actions.upsertOne(data?.data?.tripDetails || []),
             );
             dispatch(
-              daysSlice.actions.upsertMany(data?.data?.dayDetails || [])
+              daysSlice.actions.upsertMany(data?.data?.dayDetails || []),
             );
             dispatch(
-              googleSlice.actions.upsertManyPlaces(data?.data?.places || [])
+              googleSlice.actions.upsertManyPlaces(data?.data?.places || []),
             );
           }
         } catch (err) {}
@@ -117,7 +117,7 @@ const tripApi = createApi({
           if (data?.data) {
             dispatch(daysSlice.actions.upsertOne(data?.data?.dayDetail || []));
             dispatch(
-              googleSlice.actions.upsertManyPlaces(data?.data?.places || [])
+              googleSlice.actions.upsertManyPlaces(data?.data?.places || []),
             );
           }
         } catch (err) {}
@@ -143,13 +143,13 @@ const tripApi = createApi({
           const data = await queryFulfilled;
           if (data?.data) {
             dispatch(
-              tripsSlice.actions.upsertOne(data?.data?.tripDetails || [])
+              tripsSlice.actions.upsertOne(data?.data?.tripDetails || []),
             );
             dispatch(
-              daysSlice.actions.upsertMany(data?.data?.daysDetails || [])
+              daysSlice.actions.upsertMany(data?.data?.daysDetails || []),
             );
             dispatch(
-              googleSlice.actions.upsertManyPlaces(data?.data?.places || [])
+              googleSlice.actions.upsertManyPlaces(data?.data?.places || []),
             );
           }
         } catch (err) {}

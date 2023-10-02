@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     if (data.dayNumber > tripDetails?.tripDetails?.days?.length) {
       logError(
         `v2 day generation | Invalid Day Number ${data?.dayNumber} | Trip Id: ${data?.tripId}`,
-        userId
+        userId,
       );
       return RESPONSE_CONSTANTS[401]();
     }
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     if (!builder) {
       logError(
         `v2 day generation | Builder not found | Trip Id: ${data?.tripId}`,
-        userId
+        userId,
       );
       return RESPONSE_CONSTANTS[404]();
     }
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       chatGptTripItineraryResponseSchemaV2.validateSync(parsedDays);
     logDevDebug(
       `v2 Next day generation | day number : ${data?.dayNumber} | ChatGpt Parsed & Validated Response`,
-      validatedDays
+      validatedDays,
     );
     if (daysResponse?.choices[0]?.message) builder.messages = newMessage;
     builder.messages.push(daysResponse?.choices[0]?.message);
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       validatedDays,
       tripDetails,
       data,
-      builder
+      builder,
     );
     console.timeEnd(`Create Next Day trip for ${userId}`);
     return RESPONSE_CONSTANTS[200](dayDetailsWithPlaceDetails);

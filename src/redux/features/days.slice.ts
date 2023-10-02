@@ -28,6 +28,6 @@ export const selectTripsEntities = (state: RootState) => state.days.entities;
 
 export const selectTripDaysById = (
   state: RootState,
-  id: DayModalSchemaType["dayId"] | undefined
+  id: DayModalSchemaType["dayId"] | undefined,
 ) => (typeof id == "number" ? state.days.entities[id] : null);
 export default daysSlice;

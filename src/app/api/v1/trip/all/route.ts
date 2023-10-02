@@ -20,7 +20,7 @@ export async function GET() {
   } catch (err) {
     logError("Get All Trips", userId, err);
     return RESPONSE_CONSTANTS[500](
-      "Something went wrong while fetching trips."
+      "Something went wrong while fetching trips.",
     );
   }
 }

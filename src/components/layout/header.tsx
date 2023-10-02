@@ -44,7 +44,7 @@ const FeedbackFlow = () => {
           "Feedback",
           "User clicked on Feedback button",
           "User clicked on Feedback button",
-          session?.user?.id
+          session?.user?.id,
         );
         router.push(ROUTES_CONSTANTS.feedback);
       }}
@@ -84,7 +84,7 @@ const AuthenticationFlow = () => {
                 "My_Trips",
                 "All trips page for user",
                 "Load all trip",
-                session?.user?.id
+                session?.user?.id,
               );
               router.push(ROUTES_CONSTANTS.trips);
             }}
@@ -98,7 +98,7 @@ const AuthenticationFlow = () => {
                 "Sign_Out",
                 "User signed out",
                 "User signed out",
-                session?.user?.id
+                session?.user?.id,
               );
               signOut({
                 callbackUrl: ROUTES_CONSTANTS.home,
@@ -150,7 +150,7 @@ const Header = React.forwardRef<
       ref={ref}
       className={cn(
         "bg-background border-b fixed w-full lg:overflow-y-visible h-header flex items-center justify-between px-4 sm:px-6 lg:px-8 z-50",
-        className
+        className,
       )}
       {...props}
     >

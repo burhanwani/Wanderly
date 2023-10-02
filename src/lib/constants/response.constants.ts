@@ -10,7 +10,7 @@ const RESPONSE_CONSTANTS = {
   405: (message: unknown | string = "Not Allowed") =>
     NextResponse.json({ message }, { status: 405 }),
   429: (
-    message: unknown | string = "Too Many Request. Please try again later."
+    message: unknown | string = "Too Many Request. Please try again later.",
   ) =>
     NextResponse.json(
       {
@@ -18,10 +18,10 @@ const RESPONSE_CONSTANTS = {
       },
       {
         status: 429,
-      }
+      },
     ),
   500: (
-    message: unknown | string = "Something went wrong. Please try again later."
+    message: unknown | string = "Something went wrong. Please try again later.",
   ) =>
     NextResponse.json(
       {
@@ -29,7 +29,7 @@ const RESPONSE_CONSTANTS = {
       },
       {
         status: 500,
-      }
+      },
     ),
   200: (message: unknown | string = { message: "Success" }) =>
     NextResponse.json(message, { status: 200 }),

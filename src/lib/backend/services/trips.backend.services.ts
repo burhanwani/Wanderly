@@ -96,19 +96,19 @@ export async function createTrip(
   days: ChatGptTripItineraryResponseType,
   userId: string,
   placeDetails: GooglePlaceDetailResponseType,
-  messages: ChatCompletionRequestMessage[]
+  messages: ChatCompletionRequestMessage[],
 ) {
   const allDays = Object.values(days);
   const places = await Promise.all(
     allDays.map((activities) =>
       getPlaceDetailsFromTextParallel(
         activities.map((activity) => activity.google_place_name),
-        placeDetails?.result?.name
-      )
-    )
+        placeDetails?.result?.name,
+      ),
+    ),
   );
   const distances = await Promise.all(
-    places.map((days) => getDistanceMatrixBetweenPlacesParallel(days))
+    places.map((days) => getDistanceMatrixBetweenPlacesParallel(days)),
   );
 
   const { daysDetails, tripDetails } = await createFirebaseTrip(
@@ -117,7 +117,7 @@ export async function createTrip(
     placeDetails,
     places,
     distances,
-    messages
+    messages,
   );
   return { tripDetails, daysDetails, places: places.flat() };
 }
@@ -128,13 +128,13 @@ async function createFirebaseTrip(
   placeDetails: GooglePlaceDetailResponseType,
   places: GooglePlaceDetailResponseType[][],
   distances: (DistanceMatrixResponseSchemaType | null)[][],
-  messages: ChatCompletionRequestMessage[]
+  messages: ChatCompletionRequestMessage[],
 ) {
   const daysValues = Object.values(days);
   const db = firebaseAdmin.firestore();
   const tripRef = db.collection(Collections.TRIPS).doc();
   const daysRef = await Promise.all(
-    daysValues.map(() => db.collection(Collections.DAYS).doc())
+    daysValues.map(() => db.collection(Collections.DAYS).doc()),
   );
   const daysDetails = daysValues.map((day, dayIndex) => {
     return dayModalSchema.validateSync({
@@ -149,11 +149,11 @@ async function createFirebaseTrip(
             travel: {
               distance: distanceSchema.validateSync(
                 distances?.[dayIndex]?.[activityIndex]?.rows?.[0]?.elements?.[0]
-                  ?.distance
+                  ?.distance,
               ),
               duration: durationSchema.validateSync(
                 distances?.[dayIndex]?.[activityIndex]?.rows?.[0]?.elements?.[0]
-                  ?.duration
+                  ?.duration,
               ),
             },
             location: {
@@ -162,7 +162,7 @@ async function createFirebaseTrip(
               lng: places?.[dayIndex]?.[activityIndex]?.result?.geometry
                 ?.location?.lng,
             },
-          }) as ActivityModalSchemaType
+          }) as ActivityModalSchemaType,
       ),
       tripId: tripRef.id,
       userId,
@@ -191,11 +191,11 @@ async function createFirebaseTrip(
   const promises = new Array<Promise<unknown>>();
   promises.push(tripRef.create(tripDetails));
   promises.push(
-    db.collection(Collections.BUILDERS).doc().create(messageDetails)
+    db.collection(Collections.BUILDERS).doc().create(messageDetails),
   );
 
   daysDetails.forEach((day, index) =>
-    promises.push(daysRef[index].create(day))
+    promises.push(daysRef[index].create(day)),
   );
   await Promise.all(promises);
   return { tripDetails, daysDetails };
@@ -213,19 +213,19 @@ export async function createTripV2(
   userId: string,
   placeDetails: GooglePlaceDetailResponseType,
   messages: ChatCompletionRequestMessage[],
-  totalDays: number = 1
+  totalDays: number = 1,
 ) {
   const allDays = Object.values(days);
   const places = await Promise.all(
     allDays.map((activities) =>
       getPlaceDetailsFromTextParallel(
         activities.map((activity) => activity.google_place_name),
-        placeDetails?.result?.name
-      )
-    )
+        placeDetails?.result?.name,
+      ),
+    ),
   );
   const distances = await Promise.all(
-    places.map((days) => getDistanceMatrixBetweenPlacesParallel(days))
+    places.map((days) => getDistanceMatrixBetweenPlacesParallel(days)),
   );
 
   const { daysDetails, tripDetails } = await createFirebaseTripV2(
@@ -235,7 +235,7 @@ export async function createTripV2(
     places,
     distances,
     messages,
-    totalDays
+    totalDays,
   );
   return {
     tripDetails,
@@ -251,14 +251,14 @@ async function createFirebaseTripV2(
   places: GooglePlaceDetailResponseType[][],
   distances: (DistanceMatrixResponseSchemaType | null)[][],
   messages: ChatCompletionRequestMessage[],
-  totalDays: number = 1
+  totalDays: number = 1,
 ) {
   const db = firebaseAdmin.firestore();
   const tripRef = db.collection(Collections.TRIPS).doc();
   const daysRef = await Promise.all(
     Array.from({ length: totalDays }, () =>
-      db.collection(Collections.DAYS).doc()
-    )
+      db.collection(Collections.DAYS).doc(),
+    ),
   );
 
   const daysDetails = daysRef.map((day, dayIndex) => {
@@ -270,13 +270,13 @@ async function createFirebaseTripV2(
               ...activity,
               placeId: places?.[dayIndex]?.[activityIndex]?.result?.place_id,
               duration_details: distances?.[dayIndex]?.[activityIndex],
-            }) as ActivityModalSchemaTypeV2
+            }) as ActivityModalSchemaTypeV2,
         )
       : [];
 
     logDevDebug(
       `Generate Day 1 | for user ${userId} | activities : `,
-      activities
+      activities,
     );
     const dayToReturn = dayModalSchemaV2.validateSync({
       activities,
@@ -312,7 +312,7 @@ async function createFirebaseTripV2(
   promises.push(createBuilder(messageDetails));
 
   daysDetails.forEach((day, index) =>
-    promises.push(daysRef[index].create(day))
+    promises.push(daysRef[index].create(day)),
   );
   await Promise.all(promises);
   return { tripDetails, daysDetails };
@@ -326,12 +326,12 @@ export async function updateNextDayOfTripV2(
   days: ChatGptTripItineraryResponseTypeV2,
   tripDetails: GetTripReturnType,
   payload: NextDayGenerationSchemaType,
-  builder: ChatGptTripBuilderModalSchemaType
+  builder: ChatGptTripBuilderModalSchemaType,
 ) {
   const activities = days?.[payload?.dayNumber];
   const places = await getPlaceDetailsFromTextParallel(
     activities.map((activity) => activity.google_place_name),
-    tripDetails?.tripDetails?.placeName
+    tripDetails?.tripDetails?.placeName,
   );
 
   const distances = await getDistanceMatrixBetweenPlacesParallel(places);
@@ -341,7 +341,7 @@ export async function updateNextDayOfTripV2(
     payload,
     places,
     distances,
-    builder
+    builder,
   );
 }
 
@@ -351,11 +351,11 @@ async function updateFirebaseTripV2(
   payload: NextDayGenerationSchemaType,
   places: GooglePlaceDetailResponseType[],
   distances: (DistanceMatrixResponseSchemaType | null)[],
-  builder: ChatGptTripBuilderModalSchemaType
+  builder: ChatGptTripBuilderModalSchemaType,
 ) {
   const db = firebaseAdmin.firestore();
   const dayDetails = tripDetails?.daysDetails?.find(
-    (day) => day.dayId == payload.dayId
+    (day) => day.dayId == payload.dayId,
   );
   if (!dayDetails) throw new Error("Day not found");
 
@@ -365,7 +365,7 @@ async function updateFirebaseTripV2(
         ...activity,
         placeId: places?.[activityIndex]?.result?.place_id,
         duration_details: distances?.[activityIndex],
-      }) as ActivityModalSchemaTypeV2
+      }) as ActivityModalSchemaTypeV2,
   );
   const dayToReturn = dayModalSchemaV2.validateSync({
     ...dayDetails,

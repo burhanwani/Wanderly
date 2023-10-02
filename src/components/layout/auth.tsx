@@ -27,7 +27,7 @@ export default function AuthChecker({
     onUnauthenticated: () => {
       sendGAEvent(
         "UNAUTHORIZED_USER",
-        `unauthorized user accessing ${pathname}`
+        `unauthorized user accessing ${pathname}`,
       );
       dispatch(appConfigSlice.actions.clearCache());
       signIn("google", {
@@ -44,7 +44,7 @@ export default function AuthChecker({
             "Get_My_Trips",
             "All trips for user was loaded",
             "Load all trip",
-            data?.user?.id
+            data?.user?.id,
           );
         })
         .catch(() => {
@@ -52,7 +52,7 @@ export default function AuthChecker({
             "Failed_To_Loaded_My_Trips",
             "Failed to load trip for user",
             "Failed to load trip for user",
-            data?.user?.id
+            data?.user?.id,
           );
         });
     }

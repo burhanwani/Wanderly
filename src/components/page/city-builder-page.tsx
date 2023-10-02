@@ -31,7 +31,7 @@ function CityBuilderPage() {
     return isBetaLimitReached(Object.keys(state.trips.entities).length || 0);
   });
   const placeDetails = useAppSelector(
-    (state) => state.google.places.entities[city as string]
+    (state) => state.google.places.entities[city as string],
   );
   useEffect(() => {
     if (typeof city == "string") fetchCity(city);
@@ -44,20 +44,20 @@ function CityBuilderPage() {
           sendGAEvent(
             "Trip_Created",
             "Trip Generated for day 1 for city",
-            city as string
+            city as string,
           );
           router.push(
             ROUTES_CONSTANTS.tripBuilder(
               city as string,
-              response?.tripDetails?.tripId
-            )
+              response?.tripDetails?.tripId,
+            ),
           );
         })
         .catch((err) => {
           sendGAEvent(
             "Trip_Creation_Failed",
             "Trip Generated for day 1 for city",
-            err?.toString()
+            err?.toString(),
           );
           toast({
             title: "Something went wrong while creating trip",
@@ -65,7 +65,7 @@ function CityBuilderPage() {
           });
         });
     },
-    [city, createTrip, router, toast]
+    [city, createTrip, router, toast],
   );
   if (isBetaLimitReachedFlag) {
     return (

@@ -13,7 +13,7 @@ export const getTripsFromCache = async (userId: string) => {
     const data = await redisClient.lrange(
       `${RedisPrefix.TRIP}${userId}`,
       0,
-      -1
+      -1,
     );
     logCacheDebug("Get Trips", userId, data);
     return array().of(tripModalSchema).nullable().validateSync(data);
@@ -24,13 +24,13 @@ export const getTripsFromCache = async (userId: string) => {
 
 export const putTripsInCache = async (
   userId: string,
-  data: TripModalSchemaType[] = []
+  data: TripModalSchemaType[] = [],
 ) => {
   if (data.length <= 0) return;
   await redisClient.lpush(`${RedisPrefix.TRIP}${userId}`, ...data);
   await redisClient.expire(
     `${RedisPrefix.TRIP}${userId}`,
-    REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS
+    REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS,
   );
   logCacheDebug("Put Trips", userId, data);
 };

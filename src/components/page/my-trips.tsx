@@ -20,7 +20,7 @@ function MyTripsPage() {
   const tripEntities = useAppSelector(selectTripsEntities);
   const trips = useMemo(
     () => Object.values(tripEntities || {}),
-    [tripEntities]
+    [tripEntities],
   );
   const router = useRouter();
   const goToTrip = useCallback(
@@ -29,17 +29,17 @@ function MyTripsPage() {
         sendGAEvent(
           "Go_To_Trip_From_My_Trip",
           "Go to trip from my trips",
-          trip?.tripId
+          trip?.tripId,
         );
         router.push(
-          ROUTES_CONSTANTS.tripBuilder(trip?.placeId || "", trip?.tripId || "")
+          ROUTES_CONSTANTS.tripBuilder(trip?.placeId || "", trip?.tripId || ""),
         );
       } else {
         sendGAEvent(
           "Go_to_Trip_Failed",
           `Failed to go to trip id ${trip?.tripId} for user`,
           `Failed to go to trip id ${trip?.tripId} for user`,
-          data?.user?.id
+          data?.user?.id,
         );
         toast({
           title: "Something went wrong while loading trip.",
@@ -47,7 +47,7 @@ function MyTripsPage() {
         });
       }
     },
-    [data?.user?.id, router, toast]
+    [data?.user?.id, router, toast],
   );
   return (
     <Main className="items-center justify-center space-y-4">

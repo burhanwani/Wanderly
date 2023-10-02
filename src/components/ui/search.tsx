@@ -23,7 +23,7 @@ const AutocompleteInput = () => {
   const tripEntities = useAppSelector(selectTripsEntities);
   const trips = useMemo(
     () => Object.values(tripEntities || {}),
-    [tripEntities]
+    [tripEntities],
   );
   const [value, setValue] = useState<string>("");
   const [suggestionsList, setSuggestionsList] = useState<
@@ -38,17 +38,17 @@ const AutocompleteInput = () => {
     (event: React.FormEvent<HTMLElement>, { newValue }: ChangeEvent) => {
       setValue(() => newValue);
     },
-    []
+    [],
   );
 
   // Function to render suggestions
   const renderSuggestion = useCallback(
     (
-      suggestion: GooglePlacesAutocompleteResponseSchemaType["predictions"][0]
+      suggestion: GooglePlacesAutocompleteResponseSchemaType["predictions"][0],
     ) => {
       return <div className="cursor-pointer">{suggestion?.description}</div>;
     },
-    []
+    [],
   );
 
   // Function to get suggestions based on user input
@@ -60,7 +60,7 @@ const AutocompleteInput = () => {
       // Set suggestions list
       setSuggestionsList(() => filteredSuggestions);
     },
-    [fetchPredictions]
+    [fetchPredictions],
   );
 
   // Function to handle suggestion selection
@@ -71,7 +71,7 @@ const AutocompleteInput = () => {
         suggestion,
       }: {
         suggestion: GooglePlacesAutocompleteResponseSchemaType["predictions"][0];
-      }
+      },
     ) => {
       if (session.status == "authenticated") {
         router.push(ROUTES_CONSTANTS.cityBuilder(suggestion.place_id));
@@ -79,13 +79,13 @@ const AutocompleteInput = () => {
           "Home_Place_Search",
           "Search for place",
           suggestion.description,
-          session?.data?.user?.id
+          session?.data?.user?.id,
         );
       } else {
         sendGAEvent(
           "Home_Place_Search",
           "Search for place",
-          suggestion.description
+          suggestion.description,
         );
         signIn(AUTH_SIGN_OPTION.DEFAULT, {
           redirect: true,
@@ -93,7 +93,7 @@ const AutocompleteInput = () => {
         });
       }
     },
-    [router, session?.data?.user?.id, session.status]
+    [router, session?.data?.user?.id, session.status],
   );
 
   // Input properties for Autosuggest component
@@ -126,7 +126,7 @@ const AutocompleteInput = () => {
           "absolute mt-1 bg-background rounded-b-md z-10 px-4 ",
           inputRef?.current?.value != "" && suggestionsList.length != 0
             ? "border shadow-lg"
-            : ""
+            : "",
         )}
       >
         {children}
@@ -135,17 +135,17 @@ const AutocompleteInput = () => {
   };
   const onSuggestionsFetchRequested = useCallback(
     ({ value }: { value: string }) => getSuggestions(value),
-    [getSuggestions]
+    [getSuggestions],
   );
   const getSuggestionValue = useCallback(
     (
-      suggestion: GooglePlacesAutocompleteResponseSchemaType["predictions"][0]
+      suggestion: GooglePlacesAutocompleteResponseSchemaType["predictions"][0],
     ) => suggestion.description,
-    []
+    [],
   );
   const onSuggestionsClearRequested = useCallback(
     () => setSuggestionsList([]),
-    []
+    [],
   );
 
   if (
