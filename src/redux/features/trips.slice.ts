@@ -27,6 +27,6 @@ export const selectTripsEntities = (state: RootState) => state.trips.entities;
 
 export const selectTripById = (
   state: RootState,
-  id: TripModalSchemaType["tripId"] | undefined
+  id: TripModalSchemaType["tripId"] | undefined,
 ) => (typeof id == "number" ? state.trips.entities[id] : null);
 export default tripsSlice;

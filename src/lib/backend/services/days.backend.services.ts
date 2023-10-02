@@ -20,7 +20,7 @@ import {
 
 export async function updateDayActivity(
   userId: string,
-  validatedPayload: InferType<typeof dayModalSchemaV2>
+  validatedPayload: InferType<typeof dayModalSchemaV2>,
 ) {
   const db = firebaseAdmin.firestore();
   const day = await getDayFromFirebaseOrCache(validatedPayload.dayId, db);
@@ -32,7 +32,7 @@ export async function updateDayActivity(
     if (day?.tripId != validatedPayload.tripId) {
       logError(
         `Update Activity | Updating others | trip id : ${validatedPayload.tripId}`,
-        userId
+        userId,
       );
       return RESPONSE_CONSTANTS[401]();
     }
@@ -43,14 +43,14 @@ export async function updateDayActivity(
       });
       logInfo(
         `Update Activity | start time | day id : ${validatedPayload.dayId}`,
-        userId
+        userId,
       );
       return RESPONSE_CONSTANTS[200](validatedPayload);
     }
     if (isActivitiesDraggedAndDropped(day, validatedPayload)) {
       const newActivities = validatedPayload.activities;
       const places = await getPlaceDetailsParallel(
-        (newActivities || []).map((activity) => activity?.placeId!)
+        (newActivities || []).map((activity) => activity?.placeId!),
       );
       const distances = await getDistanceMatrixBetweenPlacesParallel(places);
       const activitiesToUpdate = newActivities.map((activity, index) => ({
@@ -68,7 +68,7 @@ export async function updateDayActivity(
       });
       logInfo(
         `Updated Activity | Drag and Drop | day id : ${validatedPayload.dayId}`,
-        userId
+        userId,
       );
       return RESPONSE_CONSTANTS[200]({
         ...validatedPayload,
@@ -77,14 +77,14 @@ export async function updateDayActivity(
     }
     logInfo(
       `Updated Activity | Others | day id : ${validatedPayload.dayId}`,
-      userId
+      userId,
     );
     await updateDayFirebaseAndCache(validatedPayload, db, validatedPayload);
     return RESPONSE_CONSTANTS[200](validatedPayload);
   } else {
     logError(
       `Update Activity | Day Not Found | day Id : ${validatedPayload.dayId}`,
-      userId
+      userId,
     );
     return RESPONSE_CONSTANTS[400]();
   }
@@ -92,19 +92,19 @@ export async function updateDayActivity(
 
 function isActivitiesDraggedAndDropped(
   day: DayModalSchemaTypeV2,
-  newDay: DayModalSchemaTypeV2
+  newDay: DayModalSchemaTypeV2,
 ) {
   const oldActivitiesArrangement = getActivityPlaceIdCustomHash(
-    day?.activities
+    day?.activities,
   );
   const newActivitiesArrangement = getActivityPlaceIdCustomHash(
-    newDay?.activities
+    newDay?.activities,
   );
   return oldActivitiesArrangement != newActivitiesArrangement;
 }
 
 function getActivityPlaceIdCustomHash(
-  activities: DayModalSchemaTypeV2["activities"] = []
+  activities: DayModalSchemaTypeV2["activities"] = [],
 ) {
   return activities?.map((activity) => activity.placeId).join("");
 }
@@ -124,7 +124,7 @@ export async function getDays(tripId: string) {
 
 async function getDayFromFirebaseOrCache(
   dayId: string,
-  db = firebaseAdmin.firestore()
+  db = firebaseAdmin.firestore(),
 ) {
   const day = await getDayFromCache(dayId);
   if (day) return day;
@@ -135,7 +135,7 @@ async function getDayFromFirebaseOrCache(
 export async function updateDayFirebaseAndCache(
   day: DayModalSchemaTypeV2,
   db = firebaseAdmin.firestore(),
-  dataToUpdate: Partial<DayModalSchemaTypeV2> | DayModalSchemaTypeV2
+  dataToUpdate: Partial<DayModalSchemaTypeV2> | DayModalSchemaTypeV2,
 ) {
   const newDay = { ...day, ...dataToUpdate };
   await putDayInCache(newDay);

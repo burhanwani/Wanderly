@@ -25,7 +25,7 @@ export const putPlaceInCache = async (place: GooglePlaceDetailResponseType) => {
     await redisClient.setex(
       `${RedisPrefix.PLACE}${placeId}`,
       REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS,
-      place
+      place,
     );
     logCacheDebug("Put Place", placeId, place);
   }

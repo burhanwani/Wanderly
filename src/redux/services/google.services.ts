@@ -35,7 +35,7 @@ const googleApi = createApi({
           ? [
               ...(result || []).map(
                 ({ place_id }) =>
-                  ({ type: "Predictions", id: place_id }) as const
+                  ({ type: "Predictions", id: place_id }) as const,
               ),
               { type: "Predictions", id: "LIST" },
             ] // an error occurred, but we still want to refetch this query when `{ type: 'Trip', id: 'LIST' }` is invalidated

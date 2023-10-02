@@ -7,7 +7,7 @@ export const axiosBaseQuery =
   (
     { baseUrl }: AxiosBaseQueryArg = {
       baseUrl: process?.env?.NEXT_HOST_URL ?? "",
-    }
+    },
   ): BaseQueryFn<
     {
       url: string;

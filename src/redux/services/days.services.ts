@@ -23,7 +23,7 @@ const daysApi = createApi({
       }),
       async onQueryStarted(
         _queryParam,
-        { dispatch, queryFulfilled, getState }
+        { dispatch, queryFulfilled, getState },
       ) {
         const state = getState() as RootState;
         const oldState =

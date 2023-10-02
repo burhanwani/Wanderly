@@ -22,7 +22,7 @@ export const cityBuilderModalSchema = object()
       })
       .required("Who’s coming with you is required"),
     activityTypes: array(
-      mixed<ActivityTypes>().oneOf(Object.values(ActivityTypes)).required()
+      mixed<ActivityTypes>().oneOf(Object.values(ActivityTypes)).required(),
     )
       .ensure()
       .required("Invalid Activity Types passed"),

@@ -20,7 +20,7 @@ import {
 import { getPlaceDetail } from "./places.backend.services";
 
 export const getLocationDetailsByPlaceId = async (
-  placeId: GooglePlacesAutocompleteResponseSchemaType["predictions"][0]["place_id"]
+  placeId: GooglePlacesAutocompleteResponseSchemaType["predictions"][0]["place_id"],
 ) => {
   const url = generateGoogleUrl(GoogleEndPoints.PLACE_DETAILS, {
     place_id: placeId,
@@ -35,7 +35,7 @@ export const getLocationDetailsByPlaceId = async (
 
 export const getPlaceDetailFromText = async (
   place: string = "",
-  region: string = ""
+  region: string = "",
 ): Promise<GooglePlaceDetailResponseType> => {
   const url = generateGoogleUrl(GoogleEndPoints.FIND_PLACE_FROM_TEXT, {
     input: place + ", " + region,
@@ -48,36 +48,36 @@ export const getPlaceDetailFromText = async (
     AxiosResponse<GooglePlaceFromTextSchemaType>
   >(url);
   const validatedResponse = googlePlaceFromTextSchema.validateSync(
-    response?.data
+    response?.data,
   );
   logDevDebug(
     `Place From Text Details Google | Payload: ${place + ", " + region} | `,
-    validatedResponse
+    validatedResponse,
   );
   const placeDetails = await getPlaceDetail(
-    validatedResponse?.candidates?.[0]?.place_id
+    validatedResponse?.candidates?.[0]?.place_id,
   );
   return placeDetails;
 };
 
 export const getPlaceDetailsFromTextParallel = async (
   placeNames: string[] = [],
-  region: string = ""
+  region: string = "",
 ): Promise<GooglePlaceDetailResponseType[]> => {
   return await Promise.all(
-    placeNames?.map(async (name) => getPlaceDetailFromText(name, region))
+    placeNames?.map(async (name) => getPlaceDetailFromText(name, region)),
   );
 };
 
 export const getPlaceDetailsParallel = async (placeIds: string[] = []) => {
   return await Promise.all(
-    placeIds?.map(async (placeId) => getPlaceDetail(placeId))
+    placeIds?.map(async (placeId) => getPlaceDetail(placeId)),
   );
 };
 
 export const getDistanceMatrixBetweenPlaces = async (
   place: GooglePlaceDetailResponseType,
-  nextPlace: GooglePlaceDetailResponseType
+  nextPlace: GooglePlaceDetailResponseType,
 ): Promise<DistanceMatrixResponseSchemaType | null> => {
   try {
     const payload = {
@@ -94,7 +94,7 @@ export const getDistanceMatrixBetweenPlaces = async (
     >(url);
 
     const validatedResponse = distanceMatrixResponseSchema.validateSync(
-      response?.data
+      response?.data,
     );
     await putDistanceInCache(distanceCacheKey, validatedResponse);
     return validatedResponse;
@@ -105,7 +105,7 @@ export const getDistanceMatrixBetweenPlaces = async (
 };
 
 export const getDistanceMatrixBetweenPlacesParallel = async (
-  places: GooglePlaceDetailResponseType[] = []
+  places: GooglePlaceDetailResponseType[] = [],
 ): Promise<(DistanceMatrixResponseSchemaType | null)[]> => {
   const promises = places.map(async (place, index) => {
     if (index == places.length - 1) {

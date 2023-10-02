@@ -28,7 +28,7 @@ export async function getBuilder(tripId: string) {
 }
 
 export async function createBuilder(
-  messageDetails: ChatGptTripBuilderModalSchemaType
+  messageDetails: ChatGptTripBuilderModalSchemaType,
 ) {
   const db = firebaseAdmin.firestore();
   db.collection(Collections.BUILDERS)
@@ -39,7 +39,7 @@ export async function createBuilder(
 }
 
 export async function updateBuilder(
-  messageDetails: ChatGptTripBuilderModalSchemaType
+  messageDetails: ChatGptTripBuilderModalSchemaType,
 ) {
   const db = firebaseAdmin.firestore();
   db.collection(Collections.BUILDERS)

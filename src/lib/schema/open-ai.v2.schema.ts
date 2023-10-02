@@ -19,7 +19,7 @@ export const chatGptTripGeneratorSchemaV2 = object()
   .required();
 
 export const chatGptTripGeneratorMultipleSchemaV2 = array(
-  chatGptTripGeneratorSchemaV2
+  chatGptTripGeneratorSchemaV2,
 )
   .min(0)
   .default([])
@@ -44,14 +44,14 @@ export const chatGptTripItineraryResponseSchemaV2 = lazy(
                 key: string | number
               ]: typeof chatGptTripGeneratorMultipleSchemaV2;
             },
-            key
+            key,
           ) => {
             shape[key] = chatGptTripGeneratorMultipleSchemaV2;
             return shape;
           },
-          {}
-        )
-    )
+          {},
+        ),
+    ),
 );
 
 export type ChatGptTripItineraryResponseTypeV2 = InferType<

@@ -61,7 +61,7 @@ const OpeningHoursSchema = yup.object().shape({
             day: 0,
             time: "0000",
           }),
-      })
+      }),
     )
     .default([]),
   weekday_text: yup.array().of(yup.string().default("")).default([]),

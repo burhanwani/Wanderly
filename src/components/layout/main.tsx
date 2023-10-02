@@ -11,7 +11,7 @@ const Main = React.forwardRef<
       className={cn(
         "bg-muted pt-body overflow-x-auto w-screen min-h-screen flex flex-col",
         addPadding ? " px-4 sm:px-6 lg:px-8 " : "",
-        className
+        className,
       )}
       {...props}
     ></main>

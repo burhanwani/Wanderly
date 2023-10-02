@@ -19,7 +19,7 @@ function DetailViewer({ detail = "-", heading = "" }: IDetailViewerProps) {
       Array.isArray(detail)
         ? detail.map((d) => ({ detail: d, id: nanoid() }))
         : [],
-    [detail]
+    [detail],
   );
   const headingComponent = useMemo(() => {
     return heading ? <TypographyH4>{heading}</TypographyH4> : "";

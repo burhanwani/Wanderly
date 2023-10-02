@@ -14,7 +14,7 @@ const shouldLog = (loggerType: WanderlyLoggers) => {
 
 const generateMessage = (
   action: string,
-  userId: string = "Unauthenticated"
+  userId: string = "Unauthenticated",
 ) => {
   return `action: ${action} by user id: ${userId}`;
 };
@@ -32,7 +32,7 @@ export const logCacheDebug = (action: string, key: string, data: any) => {
   if (shouldLog(WanderlyLoggers.cacheDebug))
     console.debug(
       `Cache Log | action : ${action} | key: ${key} | data : `,
-      data
+      data,
     );
 };
 
@@ -44,7 +44,7 @@ export const logDevDebug = (action: string, data: any) => {
 export const logError = (
   action: string,
   userId: string = "Unauthenticated",
-  error?: unknown
+  error?: unknown,
 ) => {
   if (shouldLog(WanderlyLoggers.error))
     console.error(generateMessage(action, userId), error);

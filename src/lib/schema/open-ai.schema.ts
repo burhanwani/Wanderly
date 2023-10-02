@@ -10,7 +10,7 @@ export const chatGptTripGeneratorSchema = object()
   .required();
 
 export const chatGptTripGeneratorMultipleSchema = array(
-  chatGptTripGeneratorSchema
+  chatGptTripGeneratorSchema,
 ).required();
 
 export type ChatGptTripDayItineraryType = InferType<
@@ -24,14 +24,14 @@ export const chatGptTripItineraryResponseSchema = lazy(
           shape: {
             [key: string | number]: typeof chatGptTripGeneratorMultipleSchema;
           },
-          key
+          key,
         ) => {
           shape[key] = array(chatGptTripGeneratorSchema).required();
           return shape;
         },
-        {}
-      )
-    )
+        {},
+      ),
+    ),
 );
 
 export type ChatGptTripItineraryResponseType = InferType<

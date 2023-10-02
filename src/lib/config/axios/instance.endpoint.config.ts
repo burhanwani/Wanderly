@@ -21,12 +21,12 @@ axiosInstance.interceptors.request.use(
             : "undefined"
         } - ${getUrl(config)}:`,
         "color: #0086b3; font-weight: bold",
-        config
-      )
+        config,
+      ),
     );
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Intercept all responses
@@ -36,8 +36,8 @@ axiosInstance.interceptors.response.use(
       console.info(
         `%c ${response.status} - ${getUrl(response.config)}:`,
         "color: #008000; font-weight: bold",
-        response
-      )
+        response,
+      ),
     );
     return response;
   },
@@ -47,8 +47,8 @@ axiosInstance.interceptors.response.use(
         console.error(
           `%c ${error.response.status} - ${getUrl(error.response.config)}:`,
           "color: #a71d5d; font-weight: bold",
-          error.response
-        )
+          error.response,
+        ),
       );
     } else {
       error = {
@@ -62,10 +62,10 @@ axiosInstance.interceptors.response.use(
       consolePrinter(() =>
         console.error(
           `%c 503 Service Unavailable `,
-          "color: #a71d5d; font-weight: bold"
-        )
+          "color: #a71d5d; font-weight: bold",
+        ),
       );
     }
     return Promise.reject(error);
-  }
+  },
 );

@@ -19,7 +19,7 @@ export const putDayInCache = async (data: DayModalSchemaTypeV2) => {
   await redisClient.setex(
     `${RedisPrefix.DAY}${data.dayId}`,
     REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS,
-    data
+    data,
   );
   logCacheDebug("Put Day", data?.dayId, data);
 };

@@ -20,13 +20,13 @@ export const getBuilderFromCache = async (tripId: string) => {
 };
 
 export const putBuilderInCache = async (
-  builder: ChatGptTripBuilderModalSchemaType
+  builder: ChatGptTripBuilderModalSchemaType,
 ) => {
   if (builder.tripId) {
     await redisClient.setex(
       `${RedisPrefix.BUILDER}${builder.tripId}`,
       REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS,
-      builder
+      builder,
     );
     logCacheDebug("Put Builder", builder.tripId, builder);
   }

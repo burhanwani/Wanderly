@@ -82,7 +82,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const userMessagesCount = useMemo(
     () => messages.filter((message) => message.role == "user")?.length || 0,
-    [messages]
+    [messages],
   );
 
   return (

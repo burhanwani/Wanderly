@@ -28,13 +28,13 @@ export const getDistanceFromCache = async (key: string) => {
 
 export const putDistanceInCache = async (
   key: string,
-  response: DistanceMatrixResponseSchemaType
+  response: DistanceMatrixResponseSchemaType,
 ) => {
   if (key) {
     await redisClient.setex(
       `${RedisPrefix.DISTANCE}${key}`,
       REDIS_CACHE_EXPIRY_CONFIGURATION.ONE_HOUR_IN_SECONDS,
-      response
+      response,
     );
     logCacheDebug("Put Google Distance", key, response);
   }
@@ -42,7 +42,7 @@ export const putDistanceInCache = async (
 
 export const buildDistanceCacheKey = (
   place: GooglePlaceDetailResponseType,
-  nextPlace: GooglePlaceDetailResponseType
+  nextPlace: GooglePlaceDetailResponseType,
 ) => {
   return `${place?.result?.geometry?.location?.lat},${place?.result?.geometry?.location?.lng}:${nextPlace?.result?.geometry?.location?.lat},${nextPlace?.result?.geometry?.location?.lng}`;
 };

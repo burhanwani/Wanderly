@@ -9,7 +9,7 @@ const Logo = React.forwardRef<
   <h1
     className={cn(
       "scroll-m-20 text-2xl font-extrabold tracking-tight lg:text-3xl",
-      className
+      className,
     )}
     ref={ref}
     {...props}

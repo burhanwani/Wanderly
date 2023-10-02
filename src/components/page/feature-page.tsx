@@ -47,10 +47,10 @@ export default function MainFeaturePage() {
     tripId || "",
     {
       skip: tripId == null,
-    }
+    },
   );
   const tripEntity = useAppSelector((state) =>
-    tripId ? state.trips.entities[tripId] : null
+    tripId ? state.trips.entities[tripId] : null,
   );
 
   const position = useMemo(() => {
@@ -61,7 +61,7 @@ export default function MainFeaturePage() {
   }, [data?.tripDetails?.location?.lat, data?.tripDetails?.location.lng]);
 
   const [currentDay, setCurrentDay] = useState<string>(
-    tripEntity?.days?.[0] || ""
+    tripEntity?.days?.[0] || "",
   );
 
   const setCurrentDayOnClick = useCallback(
@@ -70,11 +70,11 @@ export default function MainFeaturePage() {
         "Main_Feature_Page_Day_Changed",
         "Day Changed by user in Main page",
         tripEntity?.placeName,
-        session?.data?.user?.id
+        session?.data?.user?.id,
       );
       setCurrentDay(() => day);
     },
-    [session?.data?.user?.id, tripEntity?.placeName]
+    [session?.data?.user?.id, tripEntity?.placeName],
   );
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function MainFeaturePage() {
     }
   }, [isSuccess, tripEntity, tripEntity?.days]);
   const [activity, setActivity] = useState<ActivityModalSchemaTypeV2 | null>(
-    null
+    null,
   );
   return (
     <AuthChecker>

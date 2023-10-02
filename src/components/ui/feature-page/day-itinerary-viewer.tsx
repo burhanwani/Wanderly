@@ -65,7 +65,7 @@ export function DayItineraryViewer({
   setActivity,
 }: IDayItineraryViewer) {
   const place = useAppSelector(
-    (state) => state.google.places.entities[plan?.placeId!]
+    (state) => state.google.places.entities[plan?.placeId!],
   );
   const nextPlace = useAppSelector((state) => {
     const nextPlan = day?.activities?.[index + 1];
@@ -100,7 +100,7 @@ export function DayItineraryViewer({
           .finally(() => setShowDistanceLoading(() => false));
       }
     },
-    [day, plan.placeId, updateActivity]
+    [day, plan.placeId, updateActivity],
   );
   const onDelete = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -117,13 +117,13 @@ export function DayItineraryViewer({
         .unwrap()
         .finally(() => setShowDistanceLoading(() => false));
     },
-    [day, plan.placeId, updateActivity]
+    [day, plan.placeId, updateActivity],
   );
   const imageUrl = useMemo(() => {
     if ((place?.result?.photos || []).length > 0) {
       let photoReference = place?.result?.photos?.[0]?.photo_reference;
       const photo = place?.result?.photos?.find(
-        (_photo) => _photo.width > _photo?.height
+        (_photo) => _photo.width > _photo?.height,
       );
       if (photo != undefined) photoReference = photo?.photo_reference;
       return buildGooglePhotoApi(448, 250, photoReference);
@@ -229,7 +229,7 @@ export function DayItineraryViewer({
                       onClick={() =>
                         window.open(
                           `https://www.google.com/maps/dir/?api=1&origin=${place?.result?.formatted_address}&destination=${nextPlace?.result?.formatted_address}`,
-                          "_blank"
+                          "_blank",
                         )
                       }
                     >

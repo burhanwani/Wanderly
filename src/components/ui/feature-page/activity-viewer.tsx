@@ -30,7 +30,7 @@ interface IActivityViewer {
 export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
   const place = useAppSelector(
     (state) =>
-      state.google.places.entities[(activity?.placeId! as string) || ""]
+      state.google.places.entities[(activity?.placeId! as string) || ""],
   );
   const [currentImage, setCurrentImage] = useState<number>(0);
   const images = useMemo(() => {
@@ -160,7 +160,7 @@ export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
                   key={image}
                   className={cn(
                     "rounded-xl max-w-md bg-cover max-h-80 min-h-[20rem]",
-                    currentImage == index ? "block" : "hidden"
+                    currentImage == index ? "block" : "hidden",
                   )}
                   loading={"eager"}
                   src={image || ""}
