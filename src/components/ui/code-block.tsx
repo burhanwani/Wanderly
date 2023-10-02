@@ -103,7 +103,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
           </Button>
         </div>
       </div>
-      <SyntaxHighlighter
+      {/* <SyntaxHighlighter
         language={language}
         style={coldarkDark}
         PreTag="div"
@@ -122,7 +122,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
         }}
       >
         {value}
-      </SyntaxHighlighter>
+      </SyntaxHighlighter> */}
     </div>
   );
 });
