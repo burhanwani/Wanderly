@@ -26,6 +26,7 @@ export default function RootLayout({
     <html lang="en">
       <Script
         strategy="lazyOnload"
+        id="google-analytics-import"
         src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_MEASUREMENT_ID}`}
       />
 
