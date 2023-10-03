@@ -348,8 +348,8 @@ function ConciergeGoogleMap({
         bounds.extend(
           new google.maps.LatLng(
             activity.location?.lat!,
-            activity.location?.lng!,
-          ),
+            activity.location?.lng!
+          )
         );
       });
       map.fitBounds(bounds);
@@ -357,7 +357,7 @@ function ConciergeGoogleMap({
       setMap(map);
       sendGAEvent("Google_Map_Loaded", "Google Maps Loaded");
     },
-    [activityWithGoogleMeta],
+    [activityWithGoogleMeta]
   );
 
   const onUnmount = React.useCallback(function callback(map: google.maps.Map) {
@@ -371,7 +371,7 @@ function ConciergeGoogleMap({
         lng: activity?.location?.lng!,
       };
     },
-    [],
+    []
   );
 
   const getLabelForMarker = useCallback(
@@ -379,14 +379,13 @@ function ConciergeGoogleMap({
       return {
         text: (activity?.activity?.name! as string) || "",
         className: cn(
-          "bg-background/70 text-foreground",
+          "bg-[#EAF5FC]/70",
           inter.className,
-          `p-2 font-semibold border rounded-md mb-8`,
+          `p-2 font-semibold border rounded-md mb-8`
         ),
-        color: theme == "dark" ? "hsl(210 40% 98%)" : undefined,
       } as MarkerProps["label"];
     },
-    [theme],
+    []
   );
 
   return isLoaded ? (
