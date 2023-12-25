@@ -39,6 +39,7 @@
     "@radix-ui/react-toast": "1.1.5",
     "@radix-ui/react-tooltip": "1.0.7",
     "@react-google-maps/api": "2.19.2",
+    "@react-hook/window-size": "^3.1.1",
     "@reduxjs/toolkit": "1.9.6",
     "@upstash/ratelimit": "0.4.4",
     "@upstash/redis": "1.22.1",

@@ -15,16 +15,7 @@ import { Input } from "../input";
 
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
-import { Checkbox } from "../checkbox";
-import { RadioGroup, RadioGroupItem } from "../radio-group";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "../form";
 import {
   ActivityTypes,
   TripWith,

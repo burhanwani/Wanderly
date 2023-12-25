@@ -390,7 +390,7 @@ function ConciergeGoogleMap({
 
   return isLoaded ? (
     <GoogleMap
-      mapContainerClassName={cn("min-h-[80vh] ", className)}
+      mapContainerClassName={cn("min-h-[30vh] lg:min-h-[80vh] ", className)}
       center={position}
       zoom={11}
       onLoad={onLoad}
