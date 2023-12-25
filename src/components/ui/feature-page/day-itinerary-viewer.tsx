@@ -153,9 +153,9 @@ export function DayItineraryViewer({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex gap-x-2 items-center">
-                        <GripVertical className="md:h-6 md:w-6 h-12 w-12" />
+                        <GripVertical />
                         <Card
-                          className="group flex justify-between hover:border-primary hover:border-2 hover:border-dashed"
+                          className="group flex justify-between hover:border-primary hover:border-2 hover:border-dashed w-full"
                           onClick={() => setActivity(plan)}
                         >
                           <CardHeader className="w-full">
