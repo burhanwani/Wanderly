@@ -47,10 +47,10 @@ export default function MainFeaturePage() {
     tripId || "",
     {
       skip: tripId == null,
-    },
+    }
   );
   const tripEntity = useAppSelector((state) =>
-    tripId ? state.trips.entities[tripId] : null,
+    tripId ? state.trips.entities[tripId] : null
   );
 
   const position = useMemo(() => {
@@ -61,7 +61,7 @@ export default function MainFeaturePage() {
   }, [data?.tripDetails?.location?.lat, data?.tripDetails?.location.lng]);
 
   const [currentDay, setCurrentDay] = useState<string>(
-    tripEntity?.days?.[0] || "",
+    tripEntity?.days?.[0] || ""
   );
 
   const setCurrentDayOnClick = useCallback(
@@ -70,11 +70,11 @@ export default function MainFeaturePage() {
         "Main_Feature_Page_Day_Changed",
         "Day Changed by user in Main page",
         tripEntity?.placeName,
-        session?.data?.user?.id,
+        session?.data?.user?.id
       );
       setCurrentDay(() => day);
     },
-    [session?.data?.user?.id, tripEntity?.placeName],
+    [session?.data?.user?.id, tripEntity?.placeName]
   );
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function MainFeaturePage() {
     }
   }, [isSuccess, tripEntity, tripEntity?.days]);
   const [activity, setActivity] = useState<ActivityModalSchemaTypeV2 | null>(
-    null,
+    null
   );
   return (
     <AuthChecker>
@@ -133,7 +133,7 @@ export default function MainFeaturePage() {
                   </Tabs>
                 </div>
               </div>
-              <div className="flex w-full md:w-4/12 ">
+              <div className="hidden md:flex w-full md:w-4/12 ">
                 <Separator orientation="vertical" className="hidden md:block" />
                 {tripEntity && currentDay != "" && (
                   <ConciergeGoogleMap
@@ -150,14 +150,14 @@ export default function MainFeaturePage() {
         )}
         {isLoading && (
           <div className="flex items-start gap-y-2 min-h-[70vh] w-full">
-            <Card className="h-full w-full flex items-start justify-between mt-4 gap-x-2 p-4">
-              <div className="flex flex-col md:w-8/12 gap-4 ">
+            <Card className="h-full w-full flex flex-col-reverse md:flex-row items-start justify-between mt-4 gap-x-2 p-4">
+              <div className="flex flex-col w-full md:w-8/12 gap-4 ">
                 <Skeleton className="h-8 flex w-full" />
                 <Skeleton className="h-8 flex w-full" />
                 <Skeleton className="h-8 flex w-full" />
                 <ActivityLoader />
               </div>
-              <div className="flex flex-col md:w-4/12 gap-4 items-center justify-center min-h-[80vh] h-full">
+              <div className="flex flex-col w-full md:w-4/12 gap-4 items-center justify-center min-h-[20vh] md:min-h-[80vh] h-full">
                 <ConciergePlayer url={MAP_LOADING_ANIMATION} />
               </div>
             </Card>

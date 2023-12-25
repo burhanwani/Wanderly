@@ -23,14 +23,20 @@ import { useAppSelector } from "../../../redux/hooks";
 import { ONE_MILLISECOND_IN_SECOND } from "./day-viewer";
 import humanizeDuration from "humanize-duration";
 import { cn } from "../../../lib/utils/ui.utils";
+import {
+  useWindowSize,
+  useWindowWidth,
+  useWindowHeight,
+} from "@react-hook/window-size";
 interface IActivityViewer {
   activity: ActivityModalSchemaTypeV2 | null;
   setActivity: Dispatch<SetStateAction<ActivityModalSchemaTypeV2 | null>>;
 }
 export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
+  const onlyWidth = useWindowWidth();
   const place = useAppSelector(
     (state) =>
-      state.google.places.entities[(activity?.placeId! as string) || ""],
+      state.google.places.entities[(activity?.placeId! as string) || ""]
   );
   const [currentImage, setCurrentImage] = useState<number>(0);
   const images = useMemo(() => {
@@ -48,9 +54,68 @@ export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
       units: ["h"],
     });
   }, [activity?.duration_seconds]);
+  const imageViewer = useMemo(() => {
+    return images.length > 0 ? (
+      <div className="flex w-full flex-col h-full items-center justify-evenly mb-4 lg:mb-0">
+        {images.map((image, index) => (
+          <Image
+            key={image}
+            className={cn(
+              "rounded-xl max-w-md bg-cover max-h-80 min-h-[20rem]",
+              currentImage == index ? "block" : "hidden"
+            )}
+            loading={"eager"}
+            src={image || ""}
+            alt={(activity?.name as string) || "Place Image"}
+            width={onlyWidth > 500 ? 500 : 370}
+            height={250}
+          />
+        ))}
+
+        {images.length > 1 && (
+          <>
+            <div>
+              {currentImage + 1} of {images?.length}
+            </div>
+            <div className="flex w-full items-center justify-center gap-4 mt-4">
+              <Button
+                variant={"outline"}
+                onClick={() => {
+                  if (currentImage - 1 <= 0) {
+                    setCurrentImage(0);
+                  } else {
+                    setCurrentImage((prev) => prev - 1);
+                  }
+                }}
+                disabled={currentImage == 0}
+              >
+                Prev
+              </Button>
+              <Button
+                variant={"outline"}
+                disabled={currentImage + 1 == images.length}
+                onClick={() => {
+                  if (currentImage + 1 > images?.length) {
+                    setCurrentImage(0);
+                  } else {
+                    setCurrentImage((prev) => prev + 1);
+                  }
+                }}
+              >
+                Next
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    ) : (
+      <></>
+    );
+  }, [activity?.name, currentImage, images, onlyWidth]);
+  const showImageOnRight = useMemo(() => onlyWidth > 750, [onlyWidth]);
   return (
     <Dialog open={activity != null} modal={true}>
-      <DialogContent className="w-full min-w-[70vw]">
+      <DialogContent className="w-full h-full lg:h-auto min-w-[70vw]">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
             <div>{(activity?.name as string) || ""}</div>
@@ -68,8 +133,9 @@ export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
             </div>
           </DialogTitle>
         </DialogHeader>
-        <div className="flex flex-row justify-between gap-4 items-center">
-          <div className="flex flex-col gap-2">
+        <div className="flex h-full flex-row justify-between gap-4 items-center overflow-y-auto mb-4 lg:mb-0">
+          <div className="flex flex-col h-full gap-2 ">
+            {showImageOnRight ? <></> : imageViewer}
             <div className="flex gap-x-2">
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
@@ -153,14 +219,14 @@ export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
               </TypographyRegular>
             )}
           </div>
-          {images.length > 0 && (
-            <div className="hidden xl:flex w-full xl:flex-col h-full items-center justify-evenly">
+          {/* {images.length > 0 && (
+            <div className="hidden lg:flex w-full xl:flex-col h-full items-center justify-evenly overflow-y-auto">
               {images.map((image, index) => (
                 <Image
                   key={image}
                   className={cn(
                     "rounded-xl max-w-md bg-cover max-h-80 min-h-[20rem]",
-                    currentImage == index ? "block" : "hidden",
+                    currentImage == index ? "block" : "hidden"
                   )}
                   loading={"eager"}
                   src={image || ""}
@@ -206,7 +272,8 @@ export function ActivityViewer({ activity, setActivity }: IActivityViewer) {
                 </>
               )}
             </div>
-          )}
+          )} */}
+          {showImageOnRight ? imageViewer : <></>}
         </div>
       </DialogContent>
     </Dialog>
